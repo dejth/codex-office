@@ -2,6 +2,8 @@
 
 Status: Draft
 
+Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
+
 ## Labels
 
 - **Reported:** value scoped and emitted by Codex for a thread/turn.
@@ -12,6 +14,7 @@ Status: Draft
 
 - Store input, cached input, output, and total separately when available.
 - Never add cumulative snapshots together.
+- For App Server v2, replace `tokenUsage.total` by `threadId`; treat `tokenUsage.last` as the latest model-call breakdown and replay on attach as historical state.
 - Deduplicate with stable event identity where available; otherwise use documented monotonic/scope rules.
 - Parent context appearing in a child is not automatically removable; expose raw reported per-thread usage until semantics are proven.
 - Do not display account quota, credits, currency cost, or billing claims without a verified account API and separate consent.
