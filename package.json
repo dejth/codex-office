@@ -1,0 +1,114 @@
+{
+  "name": "codex-office",
+  "displayName": "Codex Office",
+  "description": "Visualize Codex agents, subagents, and reported token usage in real time.",
+  "version": "0.0.1",
+  "private": true,
+  "publisher": "dejth",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dejth/codex-office.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dejth/codex-office/issues"
+  },
+  "homepage": "https://github.com/dejth/codex-office#readme",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "codex",
+    "agents",
+    "subagents",
+    "tokens",
+    "visualization"
+  ],
+  "activationEvents": [
+    "onView:codexOffice.sidebar"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codexOffice",
+          "title": "Codex Office",
+          "icon": "assets/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "codexOffice": [
+        {
+          "type": "webview",
+          "id": "codexOffice.sidebar",
+          "name": "Office"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codexOffice.refresh",
+        "title": "Codex Office: Refresh"
+      },
+      {
+        "command": "codexOffice.openSettings",
+        "title": "Codex Office: Open Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Codex Office",
+      "properties": {
+        "codexOffice.defaultView": {
+          "type": "string",
+          "enum": [
+            "office",
+            "meter"
+          ],
+          "default": "office",
+          "description": "View shown when the sidebar opens."
+        },
+        "codexOffice.reducedMotion": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable non-essential animation."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "dev": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "check": "pnpm typecheck && pnpm test && pnpm lint && pnpm format:check && pnpm build",
+    "package": "pnpm build && vsce package"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.30.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.0"
+  }
+}
