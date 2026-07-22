@@ -1,0 +1,82 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "nested-subagents",
+  "intent": "Build a deterministic three-level tree even when children arrive before parents.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0003",
+        "sessionId": "session-0001",
+        "parentThreadId": "thread-0002",
+        "status": { "type": "idle" }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0001",
+        "sessionId": "session-0001",
+        "parentThreadId": null,
+        "status": { "type": "active", "activeFlags": [] }
+      }
+    },
+    {
+      "seq": 3,
+      "receivedAt": "2026-01-01T00:00:02.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0002",
+        "sessionId": "session-0001",
+        "parentThreadId": "thread-0001",
+        "status": { "type": "idle" }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "accept",
+    "connection": "connected",
+    "agents": [
+      {
+        "id": "thread-0001",
+        "parentId": null,
+        "name": "Agent 0001",
+        "task": null,
+        "status": "unknown",
+        "usage": null,
+        "children": [
+          {
+            "id": "thread-0002",
+            "parentId": "thread-0001",
+            "name": "Agent 0002",
+            "task": null,
+            "status": "idle",
+            "usage": null,
+            "children": [
+              {
+                "id": "thread-0003",
+                "parentId": "thread-0002",
+                "name": "Agent 0003",
+                "task": null,
+                "status": "idle",
+                "usage": null,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "diagnostics": []
+  }
+}

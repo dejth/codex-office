@@ -1,0 +1,102 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "resume-replay",
+  "intent": "Preserve safe state across disconnect and do not double-count a restored cumulative snapshot.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": 40,
+              "reasoningOutputTokens": 10,
+              "totalTokens": 120
+            },
+            "last": {
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4,
+              "totalTokens": 45
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "type": "connection",
+      "state": "disconnected"
+    },
+    {
+      "seq": 3,
+      "receivedAt": "2026-01-01T00:00:02.000Z",
+      "connectionEpoch": 2,
+      "type": "resume",
+      "threadId": "thread-0001"
+    },
+    {
+      "seq": 4,
+      "receivedAt": "2026-01-01T00:00:03.000Z",
+      "connectionEpoch": 2,
+      "delivery": "replay",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": 40,
+              "reasoningOutputTokens": 10,
+              "totalTokens": 120
+            },
+            "last": {
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4,
+              "totalTokens": 45
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "preserve-disconnected-then-replace",
+    "connection": "connected",
+    "usageByThread": {
+      "thread-0001": {
+        "input": 80,
+        "cachedInput": 20,
+        "output": 40,
+        "total": 120,
+        "provenance": "reported"
+      }
+    },
+    "diagnostics": []
+  }
+}

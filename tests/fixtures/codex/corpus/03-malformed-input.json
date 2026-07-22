@@ -1,0 +1,75 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "malformed-input",
+  "intent": "Reject invalid identifier and token types without throwing or replacing safe state.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0001",
+        "sessionId": "session-0001",
+        "parentThreadId": null,
+        "status": { "type": "idle" }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": 7,
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": "40",
+              "reasoningOutputTokens": 10,
+              "totalTokens": 120
+            },
+            "last": {
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4,
+              "totalTokens": 45
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "reject-last-event",
+    "connection": "degraded",
+    "agents": [
+      {
+        "id": "thread-0001",
+        "parentId": null,
+        "name": "Agent 0001",
+        "task": null,
+        "status": "idle",
+        "usage": null,
+        "children": []
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "invalid-field-type",
+        "method": "thread/tokenUsage/updated",
+        "field": "params.threadId"
+      }
+    ]
+  }
+}
