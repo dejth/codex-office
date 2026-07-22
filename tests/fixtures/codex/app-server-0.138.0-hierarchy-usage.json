@@ -1,0 +1,85 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "threads": [
+    {
+      "id": "thread-root",
+      "sessionId": "session-tree-a",
+      "parentThreadId": null,
+      "forkedFromId": null
+    },
+    {
+      "id": "thread-child",
+      "sessionId": "session-tree-a",
+      "parentThreadId": "thread-root",
+      "forkedFromId": null
+    },
+    {
+      "id": "thread-grandchild",
+      "sessionId": "session-tree-a",
+      "parentThreadId": "thread-child",
+      "forkedFromId": null
+    }
+  ],
+  "notificationScenarios": [
+    {
+      "scenario": "live-update",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-child",
+          "turnId": "turn-a",
+          "tokenUsage": {
+            "total": {
+              "totalTokens": 120,
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": 40,
+              "reasoningOutputTokens": 10
+            },
+            "last": {
+              "totalTokens": 45,
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    },
+    {
+      "scenario": "replayed-on-attach",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-child",
+          "turnId": "turn-a",
+          "tokenUsage": {
+            "total": {
+              "totalTokens": 120,
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": 40,
+              "reasoningOutputTokens": 10
+            },
+            "last": {
+              "totalTokens": 45,
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    }
+  ]
+}
