@@ -1,0 +1,57 @@
+:root {
+  color-scheme: light dark;
+  font-family: var(--vscode-font-family, sans-serif);
+}
+body {
+  margin: 0;
+  color: var(--vscode-foreground);
+  background: var(--vscode-sideBar-background);
+}
+main {
+  padding: 12px;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+nav {
+  display: flex;
+  gap: 4px;
+}
+button {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: 0;
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+button[aria-pressed="false"] {
+  color: var(--vscode-foreground);
+  background: transparent;
+}
+button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+.empty-state {
+  text-align: center;
+  padding: 42px 8px;
+  color: var(--vscode-descriptionForeground);
+}
+.empty-state h1 {
+  color: var(--vscode-foreground);
+  font-size: 15px;
+}
+.office-icon {
+  font-size: 44px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+*.vsix
+
+# Local tooling
+.vscode-test/
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
