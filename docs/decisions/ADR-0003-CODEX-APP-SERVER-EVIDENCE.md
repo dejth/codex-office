@@ -49,6 +49,14 @@ At build/test time, schema generation is the reproducible compatibility check. A
 
 `InitializeCapabilities` declares client capabilities (`experimentalApi`, `requestAttestation`, and optional notification opt-outs). It is not a complete server feature manifest. Method/field presence must therefore be validated against a pinned generated schema and at the parsing boundary.
 
+### v0.1 capability mode
+
+The first implemented adapter mode is partial `snapshot-polling` for exactly Codex App Server 0.138.0. It requires the `initialize`, `thread/loaded/list`, and `thread/read` request schemas. `thread/list` is not required because it can scan stored rollout metadata.
+
+The verified notification schemas are recorded separately, but their presence does not prove delivery or an active subscription. Polling `thread/read` does not expose cumulative token usage. The App Server has no standalone `thread/subscribe` request; attaching with `thread/resume` can reconstruct turns, while the data-minimizing `excludeTurns` option is experimental. Therefore v0.1 capability negotiation keeps experimental API disabled and reports only partial capability: `hierarchyPolling: true`, `usage: false`, and `liveUpdates: false`.
+
+Enabling usage or live attachment requires a separate accepted protocol/privacy decision and tests proving that session content is not unnecessarily ingested. Neither may be enabled as an implicit fallback.
+
 ## Sanitized evidence
 
 [`tests/fixtures/codex/app-server-0.138.0-hierarchy-usage.json`](../../tests/fixtures/codex/app-server-0.138.0-hierarchy-usage.json) is a synthetic projection of the verified fields. It contains invented identifiers and counts, no user content, no rollout records, and no filesystem paths.
@@ -71,4 +79,5 @@ The following remain unconfirmed and require synthetic integration tests before 
 - counter-reset behavior across compaction or server restart;
 - whether every supported launch path populates `sessionId` consistently;
 - whether future stable capability negotiation exposes a server feature manifest; and
+- whether a stable content-minimizing live attachment method becomes available;
 - whether cached parent context can ever be safely deduplicated across threads.
