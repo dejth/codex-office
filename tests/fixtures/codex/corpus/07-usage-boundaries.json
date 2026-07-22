@@ -1,0 +1,95 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "usage-boundaries",
+  "intent": "Accept Number.MAX_SAFE_INTEGER and reject a later unsafe integer without coercion.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 9007199254740990,
+              "cachedInputTokens": 0,
+              "outputTokens": 1,
+              "reasoningOutputTokens": 0,
+              "totalTokens": 9007199254740991
+            },
+            "last": {
+              "inputTokens": 9007199254740990,
+              "cachedInputTokens": 0,
+              "outputTokens": 1,
+              "reasoningOutputTokens": 0,
+              "totalTokens": 9007199254740991
+            },
+            "modelContextWindow": null
+          }
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0002",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 9007199254740991,
+              "cachedInputTokens": 0,
+              "outputTokens": 1,
+              "reasoningOutputTokens": 0,
+              "totalTokens": 9007199254740992
+            },
+            "last": {
+              "inputTokens": 1,
+              "cachedInputTokens": 0,
+              "outputTokens": 0,
+              "reasoningOutputTokens": 0,
+              "totalTokens": 1
+            },
+            "modelContextWindow": null
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "reject-last-event",
+    "connection": "degraded",
+    "usageByThread": {
+      "thread-0001": {
+        "input": 9007199254740990,
+        "cachedInput": 0,
+        "output": 1,
+        "total": 9007199254740991,
+        "provenance": "reported"
+      }
+    },
+    "diagnostics": [
+      {
+        "code": "unsafe-token-value",
+        "method": "thread/tokenUsage/updated",
+        "field": "params.tokenUsage.total.totalTokens"
+      }
+    ]
+  }
+}

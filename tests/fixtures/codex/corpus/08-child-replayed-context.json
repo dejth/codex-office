@@ -1,0 +1,96 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "child-replayed-context",
+  "intent": "Keep parent and child reported usage separate even when their input appears to overlap.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 400,
+              "cachedInputTokens": 100,
+              "outputTokens": 100,
+              "reasoningOutputTokens": 20,
+              "totalTokens": 500
+            },
+            "last": {
+              "inputTokens": 400,
+              "cachedInputTokens": 100,
+              "outputTokens": 100,
+              "reasoningOutputTokens": 20,
+              "totalTokens": 500
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0002",
+          "turnId": "turn-0002",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 390,
+              "cachedInputTokens": 300,
+              "outputTokens": 10,
+              "reasoningOutputTokens": 2,
+              "totalTokens": 400
+            },
+            "last": {
+              "inputTokens": 390,
+              "cachedInputTokens": 300,
+              "outputTokens": 10,
+              "reasoningOutputTokens": 2,
+              "totalTokens": 400
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "accept-separate-scopes",
+    "connection": "connected",
+    "usageByThread": {
+      "thread-0001": {
+        "input": 400,
+        "cachedInput": 100,
+        "output": 100,
+        "total": 500,
+        "provenance": "reported"
+      },
+      "thread-0002": {
+        "input": 390,
+        "cachedInput": 300,
+        "output": 10,
+        "total": 400,
+        "provenance": "reported"
+      }
+    },
+    "diagnostics": []
+  }
+}

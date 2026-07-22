@@ -1,0 +1,95 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "out-of-order-live",
+  "intent": "Retain the last safe cumulative snapshot when a lower live total arrives in the same epoch.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0002",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 120,
+              "cachedInputTokens": 30,
+              "outputTokens": 60,
+              "reasoningOutputTokens": 15,
+              "totalTokens": 180
+            },
+            "last": {
+              "inputTokens": 40,
+              "cachedInputTokens": 10,
+              "outputTokens": 20,
+              "reasoningOutputTokens": 5,
+              "totalTokens": 60
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "connectionEpoch": 1,
+      "delivery": "live",
+      "type": "usage",
+      "notification": {
+        "method": "thread/tokenUsage/updated",
+        "params": {
+          "threadId": "thread-0001",
+          "turnId": "turn-0001",
+          "tokenUsage": {
+            "total": {
+              "inputTokens": 80,
+              "cachedInputTokens": 20,
+              "outputTokens": 40,
+              "reasoningOutputTokens": 10,
+              "totalTokens": 120
+            },
+            "last": {
+              "inputTokens": 30,
+              "cachedInputTokens": 10,
+              "outputTokens": 15,
+              "reasoningOutputTokens": 4,
+              "totalTokens": 45
+            },
+            "modelContextWindow": 200000
+          }
+        }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "ignore-last-event",
+    "connection": "degraded",
+    "usageByThread": {
+      "thread-0001": {
+        "input": 120,
+        "cachedInput": 30,
+        "output": 60,
+        "total": 180,
+        "provenance": "reported"
+      }
+    },
+    "diagnostics": [
+      {
+        "code": "cumulative-regression",
+        "method": "thread/tokenUsage/updated",
+        "field": "params.tokenUsage.total.totalTokens"
+      }
+    ]
+  }
+}

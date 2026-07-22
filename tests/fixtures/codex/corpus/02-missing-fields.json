@@ -1,0 +1,56 @@
+{
+  "fixtureVersion": 1,
+  "source": {
+    "product": "codex-cli",
+    "version": "0.138.0",
+    "protocol": "app-server-v2",
+    "synthetic": true
+  },
+  "caseId": "missing-fields",
+  "intent": "Reject a thread without its required session identifier while retaining the last safe snapshot.",
+  "input": [
+    {
+      "seq": 1,
+      "receivedAt": "2026-01-01T00:00:00.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0001",
+        "sessionId": "session-0001",
+        "parentThreadId": null,
+        "status": { "type": "idle" }
+      }
+    },
+    {
+      "seq": 2,
+      "receivedAt": "2026-01-01T00:00:01.000Z",
+      "type": "thread",
+      "thread": {
+        "id": "thread-0002",
+        "parentThreadId": "thread-0001",
+        "status": { "type": "idle" }
+      }
+    }
+  ],
+  "expected": {
+    "disposition": "reject-last-event",
+    "connection": "degraded",
+    "agents": [
+      {
+        "id": "thread-0001",
+        "parentId": null,
+        "name": "Agent 0001",
+        "task": null,
+        "status": "idle",
+        "usage": null,
+        "children": []
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "required-field-missing",
+        "method": "thread",
+        "field": "sessionId"
+      }
+    ]
+  }
+}
