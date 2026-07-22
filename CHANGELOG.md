@@ -11,3 +11,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Deterministic, privacy-safe Codex fixture corpus for hierarchy, malformed input, replay, resume, and usage boundaries.
 - Provider-neutral hierarchy validation with deterministic ordering and explicit duplicate, orphan, cycle, and blocked-descendant handling.
 - Fail-closed Codex 0.138.0 capability negotiation for privacy-safe snapshot polling.
+- Versioned, runtime-validated extension/webview protocol with opaque snapshot projection and bounded payloads.

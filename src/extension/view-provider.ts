@@ -1,13 +1,56 @@
 import * as vscode from "vscode";
 import { randomBytes } from "node:crypto";
 
+import {
+  parseHostToWebviewMessage,
+  parseWebviewToHostMessage,
+  WEBVIEW_PROTOCOL_VERSION,
+  type HostToWebviewMessage,
+} from "../protocol/webview";
+
 export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
+  private messageSubscription?: vscode.Disposable;
+  private sequence = 0;
 
   constructor(private readonly extensionUri: vscode.Uri) {}
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
+    this.sequence = 0;
+    this.messageSubscription?.dispose();
+    const messageSubscription = view.webview.onDidReceiveMessage(
+      (value: unknown) => {
+        const parsed = parseWebviewToHostMessage(value);
+        if (!parsed.ok) return;
+
+        switch (parsed.message.type) {
+          case "ready":
+            this.sendInitialState();
+            break;
+          case "refresh":
+            this.refresh();
+            break;
+          case "open-settings":
+            void vscode.commands.executeCommand(
+              "workbench.action.openSettings",
+              "codexOffice",
+            );
+            break;
+          case "select-agent":
+          case "set-view":
+            break;
+        }
+      },
+    );
+    this.messageSubscription = messageSubscription;
+    view.onDidDispose(() => {
+      messageSubscription.dispose();
+      if (this.view === view) {
+        this.messageSubscription = undefined;
+        this.view = undefined;
+      }
+    });
     const script = view.webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "dist", "webview.js"),
     );
@@ -25,6 +68,60 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   }
 
   refresh(): void {
-    void this.view?.webview.postMessage({ type: "refresh-requested" });
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "refresh-requested",
+    });
+  }
+
+  private sendInitialState(): void {
+    const configuration = vscode.workspace.getConfiguration("codexOffice");
+    const configuredView = configuration.get<string>("defaultView");
+    const defaultView = configuredView === "meter" ? "meter" : "office";
+
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "settings",
+      defaultView,
+      reducedMotion: configuration.get<boolean>("reducedMotion", false),
+    });
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "connection",
+      state: "disconnected",
+      reason: "provider-unavailable",
+    });
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "snapshot",
+      snapshot: {
+        id: "snapshot_initial",
+        updatedAt: new Date().toISOString(),
+        agents: [],
+        unresolved: [],
+        connection: "disconnected",
+      },
+    });
+  }
+
+  private post(message: HostToWebviewMessage): void {
+    const parsed = parseHostToWebviewMessage(message);
+    if (!parsed.ok) return;
+    void this.view?.webview.postMessage(parsed.message);
+  }
+
+  private nextSequence(): number {
+    if (this.sequence >= Number.MAX_SAFE_INTEGER) {
+      this.messageSubscription?.dispose();
+      this.messageSubscription = undefined;
+      this.view = undefined;
+      return Number.MAX_SAFE_INTEGER;
+    }
+    this.sequence = Math.min(this.sequence + 1, Number.MAX_SAFE_INTEGER);
+    return this.sequence;
   }
 }
