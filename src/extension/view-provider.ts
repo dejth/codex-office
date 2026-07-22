@@ -7,6 +7,7 @@ import {
   WEBVIEW_PROTOCOL_VERSION,
   type HostToWebviewMessage,
 } from "../protocol/webview";
+import { previewSnapshot } from "../protocol/preview-fixture";
 
 export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
@@ -98,13 +99,7 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
       sequence: this.nextSequence(),
       type: "snapshot",
-      snapshot: {
-        id: "snapshot_initial",
-        updatedAt: new Date().toISOString(),
-        agents: [],
-        unresolved: [],
-        connection: "disconnected",
-      },
+      snapshot: previewSnapshot,
     });
   }
 

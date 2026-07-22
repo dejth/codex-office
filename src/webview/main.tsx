@@ -5,9 +5,13 @@ import {
   parseHostToWebviewMessage,
   shouldAcceptHostSequence,
   WEBVIEW_PROTOCOL_VERSION,
+  type WebviewSnapshot,
   type WebviewToHostMessage,
 } from "../protocol/webview";
+import { previewSnapshot } from "../protocol/preview-fixture";
 import "./styles.css";
+import { AgentTree } from "./agent-tree";
+import { replaceSnapshot } from "./state";
 
 type ViewMode = "office" | "meter";
 
@@ -20,6 +24,8 @@ const vscode = acquireVsCodeApi();
 function App(): React.JSX.Element {
   const [mode, setMode] = useState<ViewMode>("office");
   const [announcement, setAnnouncement] = useState("");
+  const [snapshot, setSnapshot] = useState<WebviewSnapshot>(previewSnapshot);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const lastSequenceByType = useRef(new Map<string, number>());
 
   useEffect(() => {
@@ -37,6 +43,9 @@ function App(): React.JSX.Element {
 
       if (parsed.message.type === "settings") {
         setMode(parsed.message.defaultView);
+      } else if (parsed.message.type === "snapshot") {
+        const nextSnapshot = parsed.message.snapshot;
+        setSnapshot((current) => replaceSnapshot(current, nextSnapshot));
       } else if (parsed.message.type === "refresh-requested") {
         setAnnouncement(`Refreshing Codex Office ${parsed.message.sequence}`);
       }
@@ -59,6 +68,15 @@ function App(): React.JSX.Element {
     });
   };
 
+  const selectAgent = (agentId: string): void => {
+    setSelectedId(agentId);
+    vscode.postMessage({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      type: "select-agent",
+      agentId,
+    });
+  };
+
   return (
     <main>
       <header>
@@ -78,15 +96,33 @@ function App(): React.JSX.Element {
           </button>
         </nav>
       </header>
-      <section aria-live="polite" className="empty-state">
-        <div className="office-icon" aria-hidden="true">
-          ⌂
-        </div>
-        <h1>
-          {mode === "office" ? "The office is quiet" : "No usage to report"}
-        </h1>
-        <p>Start a Codex task to see agents and reported usage here.</p>
-      </section>
+      {mode === "office" ? (
+        <section className="office-view" aria-labelledby="office-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Fixture preview</p>
+              <h1 id="office-heading">Agent hierarchy</h1>
+            </div>
+            <span className="preview-badge">Synthetic data</span>
+          </div>
+          <p className="view-summary">
+            Navigate with arrow keys. Press Enter or Space to select an agent.
+          </p>
+          <AgentTree
+            agents={snapshot.agents}
+            selectedId={selectedId}
+            onSelect={selectAgent}
+          />
+        </section>
+      ) : (
+        <section aria-live="polite" className="empty-state">
+          <div className="office-icon" aria-hidden="true">
+            ◫
+          </div>
+          <h1>Meter arrives in Issue #8</h1>
+          <p>Your agent selection is preserved when you return to Office.</p>
+        </section>
+      )}
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
