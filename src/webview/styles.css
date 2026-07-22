@@ -9,6 +9,8 @@ body {
 }
 main {
   padding: 12px;
+  max-width: 720px;
+  margin: 0 auto;
 }
 header {
   display: flex;
@@ -26,6 +28,123 @@ button {
   border: 0;
   padding: 5px 8px;
   border-radius: 4px;
+}
+.office-view {
+  margin-top: 24px;
+}
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.section-heading h1 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+.eyebrow {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.preview-badge,
+.usage-badge {
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-widget-border, currentColor);
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 11px;
+}
+.view-summary {
+  margin: 8px 0 16px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.45;
+}
+.agent-tree,
+.agent-tree ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.agent-tree ul {
+  position: relative;
+  padding-left: 18px;
+}
+.agent-tree ul::before {
+  position: absolute;
+  top: 0;
+  bottom: 10px;
+  left: 7px;
+  width: 1px;
+  content: "";
+  background: var(
+    --vscode-tree-indentGuidesStroke,
+    var(--vscode-widget-border)
+  );
+}
+.agent-card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 10px;
+  color: var(--vscode-foreground);
+  text-align: left;
+  background: var(--vscode-sideBarSectionHeader-background, transparent);
+  border: 1px solid var(--vscode-widget-border, transparent);
+}
+.agent-treeitem {
+  cursor: default;
+  outline: none;
+}
+.agent-treeitem:hover > .agent-card {
+  background: var(--vscode-list-hoverBackground);
+}
+.agent-treeitem:focus-visible > .agent-card {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+.agent-treeitem[aria-selected="true"] > .agent-card {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+  border-color: var(--vscode-focusBorder);
+}
+.agent-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+.agent-avatar {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 7px;
+}
+.agent-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.agent-status {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+.agent-treeitem[aria-selected="true"] > .agent-card .agent-status,
+.agent-treeitem[aria-selected="true"] > .agent-card .usage-badge {
+  color: inherit;
+}
+.status-waiting-approval,
+.status-failed {
+  font-weight: 700;
 }
 button[aria-pressed="false"] {
   color: var(--vscode-foreground);
@@ -64,5 +183,25 @@ button:focus-visible {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+@media (max-width: 360px) {
+  main {
+    padding: 8px;
+  }
+  .section-heading {
+    display: block;
+  }
+  .preview-badge {
+    display: inline-block;
+    margin-top: 8px;
+  }
+  .agent-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .usage-badge {
+    margin-left: 38px;
   }
 }

@@ -1,0 +1,47 @@
+import type { WebviewSnapshot } from "./webview";
+
+/** Sanitized, deterministic preview data. It contains no provider/session data. */
+export const previewSnapshot: WebviewSnapshot = {
+  id: "snapshot_preview",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  connection: "disconnected",
+  unresolved: [],
+  agents: [
+    {
+      id: "agent_preview_1",
+      name: "Agent 1",
+      status: "editing",
+      usage: {
+        input: 820,
+        cachedInput: 240,
+        output: 220,
+        total: 1_280,
+        provenance: "reported",
+      },
+      children: [
+        {
+          id: "agent_preview_2",
+          name: "Agent 2",
+          status: "reading",
+          usage: null,
+          children: [],
+        },
+        {
+          id: "agent_preview_3",
+          name: "Agent 3",
+          status: "waiting-approval",
+          usage: null,
+          children: [
+            {
+              id: "agent_preview_4",
+              name: "Agent 4",
+              status: "completed",
+              usage: null,
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

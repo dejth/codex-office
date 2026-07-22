@@ -12,3 +12,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Provider-neutral hierarchy validation with deterministic ordering and explicit duplicate, orphan, cycle, and blocked-descendant handling.
 - Fail-closed Codex 0.138.0 capability negotiation for privacy-safe snapshot polling.
 - Versioned, runtime-validated extension/webview protocol with opaque snapshot projection and bounded payloads.
+- Accessible agent-tree fixture preview with deterministic keyboard navigation, text status cues, and narrow-width layout.
