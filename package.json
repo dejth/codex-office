@@ -4,6 +4,7 @@
   "description": "Visualize Codex agents, subagents, and reported token usage in real time.",
   "version": "0.0.1",
   "private": true,
+  "packageManager": "pnpm@10.15.0",
   "publisher": "dejth",
   "license": "MIT",
   "repository": {
