@@ -1,6 +1,8 @@
 # CDD-004 — Codex Provider Contract
 
-Status: Investigation required
+Status: Investigated for Codex CLI 0.138.0
+
+Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 
 ## Strategy
 
@@ -19,6 +21,8 @@ Status: Investigation required
 ## Required evidence
 
 Document tested Codex versions, sanitized event fixtures, field semantics, failure behavior, and source references in an ADR. No production parser may be based solely on remembered or unofficial field names.
+
+The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.parentThreadId` as the version-scoped fields for expressing recursive hierarchy. Live nested emission across every launch path remains unverified. Missing or conflicting relationships must degrade explicitly rather than be guessed. Production parsing remains blocked on fixture-backed boundary validation and version/capability guards.
 
 ## Failure behavior
 
