@@ -2,7 +2,8 @@
   "version": 1,
   "generatedAt": "2026-07-23",
   "grid": { "width": 128, "height": 128 },
-  "budgetBytes": { "perAsset": 20000, "total": 160000 },
+  "animationGrid": { "frameWidth": 64, "frameHeight": 64, "frames": 2 },
+  "budgetBytes": { "perAsset": 20000, "total": 240000 },
   "assets": {
     "thinking": {
       "file": "status/thinking.png",
@@ -48,6 +49,53 @@
       "file": "status/unknown.png",
       "bytes": 11604,
       "sha256": "74ac468cbd87927c911f785eb587e399f02d0b32651165a105b48cd1080e9fe7"
+    }
+  },
+  "animations": {
+    "thinking": {
+      "file": "animation/thinking.png",
+      "bytes": 6473,
+      "sha256": "c1aeef6bb6d287d644f04585a87c82ee5c43bc45734cddd94de9bd029e28cba6"
+    },
+    "reading": {
+      "file": "animation/reading.png",
+      "bytes": 7851,
+      "sha256": "033c67d907f9b7589c9e173e5e061516e9764798d2866b1d2673ec0830ae1e28"
+    },
+    "editing": {
+      "file": "animation/editing.png",
+      "bytes": 8237,
+      "sha256": "0fadc24167491d7c66c804cba8371380f4e5575f4230a87838b634501bff3eda"
+    },
+    "running-command": {
+      "file": "animation/running-command.png",
+      "bytes": 9333,
+      "sha256": "c7797d787f318f8a97dd04c374bf20c0c6f3b13fb77709055fa0ab2685fd0f35"
+    },
+    "waiting-approval": {
+      "file": "animation/waiting-approval.png",
+      "bytes": 5862,
+      "sha256": "7e3fe9bf1fc5b9fe73f7a7b8e162452d7fd858339ca5c3e2700336616a78a9ca"
+    },
+    "completed": {
+      "file": "animation/completed.png",
+      "bytes": 6457,
+      "sha256": "10fda1c9ecc165fcc9582808995161bb8e7628055640eb5ed61b79f4181741b5"
+    },
+    "failed": {
+      "file": "animation/failed.png",
+      "bytes": 7894,
+      "sha256": "50da82df93e09b4235ec05e800046c5d77b77c804885a80640e8aee78da106c7"
+    },
+    "idle": {
+      "file": "animation/idle.png",
+      "bytes": 9993,
+      "sha256": "bef086cf416d9ade1b691a42edc5fe116d51fca336e7e8f8716380dd2e6869be"
+    },
+    "unknown": {
+      "file": "animation/unknown.png",
+      "bytes": 7806,
+      "sha256": "a7e54436cbe892b0bb4160520480c4ab1a338b62c20c33feb9b0f38b12acd4c6"
     }
   }
 }

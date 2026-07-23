@@ -12,8 +12,14 @@ interface AssetEntry {
 
 interface AssetManifest {
   grid: { width: number; height: number };
+  animationGrid: {
+    frameWidth: number;
+    frameHeight: number;
+    frames: number;
+  };
   budgetBytes: { perAsset: number; total: number };
   assets: Record<string, AssetEntry>;
+  animations: Record<string, AssetEntry>;
 }
 
 const officeRoot = resolve(process.cwd(), "assets/office");
@@ -77,11 +83,36 @@ describe("Office production visual assets", () => {
   });
 
   it("keeps the complete production set within its asset budget", () => {
-    const total = Object.values(manifest.assets).reduce(
-      (sum, asset) => sum + asset.bytes,
-      0,
-    );
+    const total = [
+      ...Object.values(manifest.assets),
+      ...Object.values(manifest.animations),
+    ].reduce((sum, asset) => sum + asset.bytes, 0);
 
     expect(total).toBeLessThanOrEqual(manifest.budgetBytes.total);
+  });
+
+  it("provides a deterministic two-frame RGBA sprite for every status", () => {
+    expect(Object.keys(manifest.animations)).toEqual(statuses);
+    expect(readdirSync(resolve(officeRoot, "animation")).sort()).toEqual(
+      Object.values(manifest.animations)
+        .map(({ file }) => file.replace("animation/", ""))
+        .sort(),
+    );
+
+    for (const status of statuses) {
+      const entry = manifest.animations[status]!;
+      const contents = readFileSync(resolve(officeRoot, entry.file));
+      expect(readPngDimensions(contents)).toEqual({
+        width:
+          manifest.animationGrid.frameWidth * manifest.animationGrid.frames,
+        height: manifest.animationGrid.frameHeight,
+        colorType: 6,
+      });
+      expect(statSync(resolve(officeRoot, entry.file)).size).toBe(entry.bytes);
+      expect(createHash("sha256").update(contents).digest("hex")).toBe(
+        entry.sha256,
+      );
+      expect(entry.bytes).toBeLessThanOrEqual(manifest.budgetBytes.perAsset);
+    }
   });
 });

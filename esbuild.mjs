@@ -1,6 +1,8 @@
 import * as esbuild from "esbuild";
+import { rm } from "node:fs/promises";
 
 const watch = process.argv.includes("--watch");
+await rm("dist", { force: true, recursive: true });
 const builds = [
   {
     entryPoints: ["src/extension/extension.ts"],

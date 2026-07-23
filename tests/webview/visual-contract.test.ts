@@ -23,8 +23,16 @@ describe("Office and Meter visual contract", () => {
     );
     expect(urls).toHaveLength(9);
     expect(
-      urls.every((url) => url?.startsWith("../../assets/office/status/")),
+      urls.every((url) => url?.startsWith("../../assets/office/animation/")),
     ).toBe(true);
     expect(css).not.toMatch(/https?:\/\//);
+  });
+
+  it("uses frame-based sprite motion rather than whole-image transforms", () => {
+    expect(css).toContain("@keyframes office-sprite-two");
+    expect(css).toContain("background-size: 200% 100%");
+    expect(css).toContain("background-position: 100% center");
+    expect(css).not.toContain("@keyframes office-breathe");
+    expect(css).not.toContain("@keyframes office-type");
   });
 });

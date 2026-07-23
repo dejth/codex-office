@@ -92,6 +92,8 @@ describe("VSIX content policy", () => {
         "extension/dist/webview.css",
         "extension/src/extension/extension.ts",
         "extension/assets/office/source/atlas.png",
+        "extension/assets/office/animation/thinking.png",
+        "extension/tmp/imagegen/atlas.png",
         "extension/dist/webview.js.map",
       ].join("\n"),
     );

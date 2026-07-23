@@ -28,5 +28,26 @@ Production prompt:
 > coral, teal, navy, and cream palette, chroma green background, no text,
 > watermark, or shadows.
 
+## Office animation sprites
+
+- Creator: Codex Office project using OpenAI image generation
+- Generated: 2026-07-23
+- Input reference: the project-owned status atlas above
+- Files: `assets/office/animation/*.png`
+- License: distributed as project assets under the repository MIT license
+- Modifications: chroma-key removal, deterministic 3 × 3 and two-frame crop,
+  transparent trimming, nearest-neighbor resize, and PNG compression
+- Source files:
+  `assets/office/source/codex-office-animation-atlas-chroma.png` and
+  `assets/office/source/codex-office-animation-atlas.png`
+
+Production prompt:
+
+> Transform the supplied 3 × 3 status atlas into the same robot and status
+> order, with two complete side-by-side frames per cell. Each pair changes the
+> character action or prop rather than translating the complete image. Preserve
+> the cream, navy, amber, coral, and teal pixel-art identity on a removable flat
+> chroma-green background, with no text, watermark, borders, or shadows.
+
 See `docs/design/OFFICE_VISUAL_SYSTEM.md` for the asset pipeline, conventions,
 and deterministic manifest.
