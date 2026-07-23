@@ -1,6 +1,6 @@
 # CDD-006 — Office UI Contract
 
-Status: Implemented for fixture tree and Office state machine; Meter pending
+Status: Implemented for fixture tree, Office state machine, and Meter
 
 ## Modes
 
@@ -19,6 +19,14 @@ Both `codexOffice.reducedMotion` and the operating-system `prefers-reduced-motio
 ## Responsive behavior
 
 At narrow width, prioritize agent, status, and total. Inspector becomes an in-view drill-down. Meter uses compact rows rather than wide charts.
+
+## Meter behavior
+
+- Office and Meter render the same sanitized snapshot and share selection state.
+- The summary exposes visible main-agent, subagent, and thread counts. Cross-thread totals remain unavailable when multiple cumulative thread snapshots contribute.
+- Rows expose exact hierarchy depth in their accessible names and cap visual indentation after level four for narrow layouts. Per-thread total, status, and provenance remain visible at a glance; input, cached input, and output are available in native disclosure controls.
+- Unknown values render as `—`, distinct from a reported zero.
+- A visible explanation defines reported, derived, and estimated values and warns that parent/child context may overlap.
 
 ## Accessibility gates
 

@@ -12,6 +12,7 @@ import { previewSnapshot } from "../protocol/preview-fixture";
 import "./styles.css";
 import { AgentTree } from "./agent-tree";
 import { OfficeView } from "./office-view";
+import { MeterView } from "./meter-view";
 import { replaceSnapshot } from "./state";
 
 type ViewMode = "office" | "meter";
@@ -120,13 +121,11 @@ function App(): React.JSX.Element {
           </div>
         </>
       ) : (
-        <section aria-live="polite" className="empty-state">
-          <div className="office-icon" aria-hidden="true">
-            ◫
-          </div>
-          <h1>Meter arrives in Issue #8</h1>
-          <p>Your agent selection is preserved when you return to Office.</p>
-        </section>
+        <MeterView
+          agents={snapshot.agents}
+          selectedId={selectedId}
+          onSelect={selectAgent}
+        />
       )}
       <p className="sr-only" aria-live="polite">
         {announcement}
