@@ -1,6 +1,6 @@
 # CDD-006 — Office UI Contract
 
-Status: Implemented for fixture tree, Office state machine, and Meter
+Status: Implemented for provider-backed Office, state machine, and Meter
 
 ## Modes
 
@@ -20,6 +20,23 @@ Both `codexOffice.reducedMotion` and the operating-system `prefers-reduced-motio
 
 At narrow width, prioritize agent, status, and total. Inspector becomes an in-view drill-down. Meter uses compact rows rather than wide charts.
 
+## Provider and empty states
+
+- Production UI describes provider-backed content as local sessions. It never
+  labels provider data as synthetic or implies that persisted session status is
+  live.
+- A connected authoritative empty snapshot renders an idle character with
+  readable guidance to start a Codex session in the current workspace.
+- Degraded and disconnected states render failed and unknown characters
+  respectively, alongside non-color text. The character is decorative; the
+  heading and detail carry the meaning.
+- Connection notices preserve only the protocol's bounded reason enum. Missing
+  executable, unavailable transport, unsupported version, and invalid data each
+  receive specific recovery-oriented copy without exposing commands, paths,
+  payloads, or session content.
+- Empty-state artwork uses the existing local production assets and introduces
+  no network requests or new motion.
+
 ## Meter behavior
 
 - Office and Meter render the same sanitized snapshot and share selection state.
@@ -35,6 +52,8 @@ Keyboard traversal, visible focus, appropriate headings, live-region restraint, 
 ## Fixture tree behavior
 
 - The extension host explicitly sends a deterministic, sanitized preview `WebviewSnapshot`; it never requires a live Codex session, filesystem access, or network access. Later authoritative snapshots, including empty ones, replace it atomically.
+- Synthetic labeling belongs only to explicit fixture and test harnesses, not
+  the production Office view.
 - The hierarchy uses `tree`, `treeitem`, and `group` semantics with one roving tab stop.
 - Up/Down move through visible agents, Right moves to the first child, Left moves to the parent, Home/End move to the bounds, and Enter/Space select.
 - Every status has both an icon and readable text. Accessible names include agent, status, and usage availability.

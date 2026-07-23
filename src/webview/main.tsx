@@ -13,7 +13,12 @@ import { AgentTree } from "./agent-tree";
 import { ConnectionNotice } from "./connection-notice";
 import { OfficeView } from "./office-view";
 import { MeterView } from "./meter-view";
-import { replaceConnection, replaceSnapshot } from "./state";
+import {
+  replaceConnection,
+  replaceConnectionFromSnapshot,
+  replaceSnapshot,
+  type ConnectionState,
+} from "./state";
 
 type ViewMode = "office" | "meter";
 
@@ -34,8 +39,10 @@ function App(): React.JSX.Element {
   const [mode, setMode] = useState<ViewMode>("office");
   const [announcement, setAnnouncement] = useState("");
   const [snapshot, setSnapshot] = useState<WebviewSnapshot>(INITIAL_SNAPSHOT);
-  const [connection, setConnection] =
-    useState<WebviewSnapshot["connection"]>("disconnected");
+  const [connection, setConnection] = useState<ConnectionState>({
+    state: "disconnected",
+    reason: null,
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const lastSequenceByType = useRef(new Map<string, number>());
@@ -59,9 +66,14 @@ function App(): React.JSX.Element {
       } else if (parsed.message.type === "snapshot") {
         const nextSnapshot = parsed.message.snapshot;
         setSnapshot((current) => replaceSnapshot(current, nextSnapshot));
-        setConnection(nextSnapshot.connection);
+        setConnection((current) =>
+          replaceConnectionFromSnapshot(current, nextSnapshot.connection),
+        );
       } else if (parsed.message.type === "connection") {
-        const nextConnection = parsed.message.state;
+        const nextConnection = {
+          state: parsed.message.state,
+          reason: parsed.message.reason,
+        };
         setConnection((current) => replaceConnection(current, nextConnection));
       } else if (parsed.message.type === "refresh-requested") {
         setAnnouncement(`Refreshing Codex Office ${parsed.message.sequence}`);
@@ -113,7 +125,7 @@ function App(): React.JSX.Element {
           </button>
         </nav>
       </header>
-      <ConnectionNotice state={connection} />
+      <ConnectionNotice state={connection.state} reason={connection.reason} />
       {mode === "office" ? (
         <>
           <OfficeView
@@ -121,18 +133,21 @@ function App(): React.JSX.Element {
             reducedMotion={reducedMotion}
             selectedId={selectedId}
             onSelect={selectAgent}
+            connection={connection.state}
           />
-          <div className="tree-fallback">
-            <h2>Accessible agent list</h2>
-            <p className="view-summary">
-              Navigate with arrow keys. Press Enter or Space to select.
-            </p>
-            <AgentTree
-              agents={snapshot.agents}
-              selectedId={selectedId}
-              onSelect={selectAgent}
-            />
-          </div>
+          {snapshot.agents.length > 0 ? (
+            <div className="tree-fallback">
+              <h2>Accessible agent list</h2>
+              <p className="view-summary">
+                Navigate with arrow keys. Press Enter or Space to select.
+              </p>
+              <AgentTree
+                agents={snapshot.agents}
+                selectedId={selectedId}
+                onSelect={selectAgent}
+              />
+            </div>
+          ) : null}
         </>
       ) : (
         <MeterView
