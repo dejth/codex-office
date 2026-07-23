@@ -35,20 +35,24 @@ Production prompt:
 - Input reference: the project-owned status atlas above
 - Files: `assets/office/animation/*.png`
 - License: distributed as project assets under the repository MIT license
-- Modifications: chroma-key removal, deterministic five-frame crop,
-  transparent trimming, nearest-neighbor resize, and PNG compression
+- Modifications: green chroma-key removal with edge contraction and despill,
+  shared per-status union crop, hot-pink eye-anchor registration, final
+  128 × 128 safe-canvas composition, nearest-neighbor resize, and PNG
+  compression
 - Source files:
-  `assets/office/source/five-frame-*-chroma.png` and matching transparent
-  `assets/office/source/five-frame-*.png` atlases
+  `assets/office/source/rework-v2/*-chroma.png` and matching transparent
+  `assets/office/source/rework-v2/*.png` strips
 
 Production prompt:
 
-> Create three strict 5 × 3 animation atlases using the supplied Codex Office
-> robot identity. Each status row progresses through five baseline-aligned
-> action frames; frame three closes both eyes for a visible blink and all other
-> frames keep the eyes open. Preserve status props, cream/navy/amber/coral/teal
-> pixel art, cell gutters, and a removable flat chroma-green background. No
-> text, watermark, borders, shadows, overlap, or whole-character translation.
+> Create one strict five-frame horizontal action strip per Office status using
+> the supplied larger Codex Office robot identity. Keep one full robot in each
+> equal cell with the same baseline and scale. Frame three closes both eyes;
+> the remaining frames use saturated hot-pink open eyes and clean
+> status-specific hand or prop motion. Preserve the cream, navy, amber, coral,
+> and teal high-detail pixel art on a removable flat green background. No
+> checkerboard, watermark, shadows, clipping, duplicate body, overlapping
+> limbs, or cross-cell content.
 
 See `docs/design/OFFICE_VISUAL_SYSTEM.md` for the asset pipeline, conventions,
 and deterministic manifest.

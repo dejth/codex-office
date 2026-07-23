@@ -9,9 +9,9 @@ export const budgets = Object.freeze({
   extensionBytes: 100 * 1024,
   webviewBytes: 350 * 1024,
   stylesheetBytes: 20 * 1024,
-  imageBytes: 160_000,
-  distBytes: 550 * 1024,
-  vsixBytes: 350 * 1024,
+  imageBytes: 600_000,
+  distBytes: 1024 * 1024,
+  vsixBytes: 700 * 1024,
 });
 
 const forbiddenPackagePaths = [
