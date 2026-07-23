@@ -6,6 +6,9 @@ node_modules/**
 src/**
 tasks/**
 tests/**
+assets/office/source/**
+assets/office/status-atlas.png
+assets/office/status/**
 .DS_Store
 .gitignore
 .vscodeignore
