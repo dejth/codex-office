@@ -221,37 +221,37 @@ button {
   width: min(100%, 128px);
   aspect-ratio: 1;
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+  background-position: 0 center;
+  background-size: 200% 100%;
   image-rendering: pixelated;
   transform-origin: center bottom;
 }
 .pixel-character-thinking {
-  background-image: url("../../assets/office/status/thinking.png");
+  background-image: url("../../assets/office/animation/thinking.png");
 }
 .pixel-character-reading {
-  background-image: url("../../assets/office/status/reading.png");
+  background-image: url("../../assets/office/animation/reading.png");
 }
 .pixel-character-editing {
-  background-image: url("../../assets/office/status/editing.png");
+  background-image: url("../../assets/office/animation/editing.png");
 }
 .pixel-character-running-command {
-  background-image: url("../../assets/office/status/running-command.png");
+  background-image: url("../../assets/office/animation/running-command.png");
 }
 .pixel-character-waiting-approval {
-  background-image: url("../../assets/office/status/waiting-approval.png");
+  background-image: url("../../assets/office/animation/waiting-approval.png");
 }
 .pixel-character-completed {
-  background-image: url("../../assets/office/status/completed.png");
+  background-image: url("../../assets/office/animation/completed.png");
 }
 .pixel-character-failed {
-  background-image: url("../../assets/office/status/failed.png");
+  background-image: url("../../assets/office/animation/failed.png");
 }
 .pixel-character-idle {
-  background-image: url("../../assets/office/status/idle.png");
+  background-image: url("../../assets/office/animation/idle.png");
 }
 .pixel-character-unknown {
-  background-image: url("../../assets/office/status/unknown.png");
+  background-image: url("../../assets/office/animation/unknown.png");
 }
 .station-caption {
   position: relative;
@@ -282,19 +282,26 @@ button {
 }
 .office-station[data-motion="thought-breathe"] .pixel-character,
 .office-station[data-motion="rest-breathe"] .pixel-character {
-  animation: office-breathe 2.4s ease-in-out infinite;
+  animation: office-sprite-two 2.4s linear infinite;
 }
 .office-station[data-motion="typing-loop"] .pixel-character {
-  animation: office-type 0.55s steps(2, end) infinite;
+  animation: office-sprite-two 0.55s linear infinite;
 }
 .office-station[data-motion="page-turn"] .pixel-character {
-  animation: office-read 1.8s ease-in-out infinite;
+  animation: office-sprite-two 1.8s linear infinite;
 }
 .office-station[data-motion="terminal-scan"] .pixel-character {
-  animation: office-screen 1.25s steps(2, end) infinite;
+  animation: office-sprite-two 1.25s linear infinite;
 }
-.office-station[data-motion="attention-breathe"] {
-  animation: office-attention 1.6s ease-in-out infinite;
+.office-station[data-motion="attention-breathe"] .pixel-character {
+  animation: office-sprite-two 1.6s linear infinite;
+}
+.office-station[data-motion="success-settle"] .pixel-character {
+  animation: office-sprite-two 1.2s linear 2 forwards;
+}
+.office-station[data-motion="failure-recover"] .pixel-character,
+.office-station[data-motion="question-pulse"] .pixel-character {
+  animation: office-sprite-two 2.4s linear infinite;
 }
 .office-station[data-transition="crossfade"] .station-scene {
   animation: office-crossfade 220ms ease-out;
@@ -475,30 +482,14 @@ button {
   color: var(--vscode-descriptionForeground);
   text-align: center;
 }
-@keyframes office-breathe {
-  50% {
-    transform: translateY(-3px);
+@keyframes office-sprite-two {
+  0%,
+  49.999% {
+    background-position: 0 center;
   }
-}
-@keyframes office-type {
-  50% {
-    transform: translateX(2px) rotate(1deg);
-  }
-}
-@keyframes office-read {
-  50% {
-    transform: rotate(-2deg);
-  }
-}
-@keyframes office-screen {
-  50% {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-}
-@keyframes office-attention {
-  50% {
-    border-color: var(--vscode-notificationsWarningIcon-foreground);
+  50%,
+  100% {
+    background-position: 100% center;
   }
 }
 @keyframes office-crossfade {

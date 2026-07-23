@@ -16,8 +16,9 @@ export const budgets = Object.freeze({
 
 const forbiddenPackagePaths = [
   /^extension\/(?:src|tests|tasks|docs|coverage|\.github)\//,
-  /^extension\/assets\/office\/(?:source|status)\//,
+  /^extension\/assets\/office\/(?:animation|source|status)\//,
   /^extension\/assets\/office\/status-atlas\.png$/,
+  /^extension\/tmp\//,
   /(?:^|\/)\.DS_Store$/,
   /\.map$/,
   /\.(?:ts|tsx)$/,

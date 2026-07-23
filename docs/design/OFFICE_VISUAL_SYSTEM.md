@@ -1,14 +1,15 @@
 # Office Visual System
 
-The v0.1 Office uses a local nine-character pixel-art set. Each character
-represents one domain status while readable status text and station labels
+The v0.1 Office uses a local nine-status pixel-art set. Each status has a
+two-frame production sprite while readable status text and station labels
 remain the authoritative cues.
 
 ## Visual language
 
 - Palette: cream body, deep navy outlines, amber highlights, coral alerts, and
   teal success accents.
-- Grid: one transparent 128 × 128 PNG per status.
+- Grid: one transparent 128 × 64 sprite sheet per status containing two
+  baseline-aligned 64 × 64 frames.
 - Scale: preserve square proportions and use nearest-neighbor
   (`image-rendering: pixelated`) rendering.
 - Silhouette: the same small office robot appears in every state; pose and
@@ -35,9 +36,11 @@ state, tree semantics, and accessible names must remain available without it.
 
 ## Motion and theme behavior
 
-Motion is applied to the image wrapper, not baked into the files. Both the
-`codexOffice.reducedMotion` setting and `prefers-reduced-motion` disable all
-Office animation and transitions. Warning states never flash.
+Motion advances between genuine action frames by changing the sprite sheet
+background position. It does not simulate action by moving the complete
+bitmap. Both the `codexOffice.reducedMotion` setting and
+`prefers-reduced-motion` disable all Office animation and transitions, leaving
+the first frame visible. Warning states never flash.
 
 Room chrome uses VS Code theme variables for light, dark, and high-contrast
 compatibility. Asset colors are supplementary: status is also conveyed by text,
@@ -52,7 +55,8 @@ recorded in `assets/ATTRIBUTION.md`. The production steps are:
 2. Crop the 3 × 3 atlas in documented status order.
 3. Resize each crop to 128 × 128 with nearest-neighbor sampling.
 4. Record bytes and SHA-256 hashes in `assets/office/manifest.json`.
-5. Bundle only the nine production PNGs into `dist/assets`.
+5. Pair the two action frames into a 128 × 64 RGBA sprite sheet.
+6. Bundle only the nine production animation PNGs into `dist/assets`.
 
 The manifest is the deterministic source baseline for Issue #9 visual
 regression. Tests enforce:

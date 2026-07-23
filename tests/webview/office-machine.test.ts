@@ -38,9 +38,15 @@ const expectedByStatus = {
     "success-settle",
     "settled",
   ],
-  failed: ["recovery-bay", "warning", "danger", "none", "settled"],
+  failed: ["recovery-bay", "warning", "danger", "failure-recover", "settled"],
   idle: ["break-area", "resting", "muted", "rest-breathe", "looping"],
-  unknown: ["observation-point", "questioning", "neutral", "none", "settled"],
+  unknown: [
+    "observation-point",
+    "questioning",
+    "neutral",
+    "question-pulse",
+    "settled",
+  ],
 } as const satisfies Record<AgentStatus, readonly string[]>;
 
 describe("Office animation state machine", () => {
