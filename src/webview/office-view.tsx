@@ -92,7 +92,10 @@ export const OfficeView = memo(function OfficeView({
         local Codex provider.
       </p>
       {isEmpty ? (
-        <OfficeEmptyState connection={connection} />
+        <OfficeEmptyState
+          connection={connection}
+          reducedMotion={reducedMotion}
+        />
       ) : (
         <div
           className="office-room"
@@ -144,12 +147,17 @@ const EMPTY_STATE_COPY: Record<
 
 function OfficeEmptyState({
   connection,
+  reducedMotion,
 }: {
   connection: WebviewSnapshot["connection"];
+  reducedMotion: boolean;
 }): React.JSX.Element {
   const copy = EMPTY_STATE_COPY[connection];
   return (
-    <div className="office-empty-state">
+    <div
+      className="office-empty-state"
+      data-reduced-motion={reducedMotion ? "true" : "false"}
+    >
       <span
         className={`pixel-character pixel-character-${copy.character}`}
         aria-hidden="true"
