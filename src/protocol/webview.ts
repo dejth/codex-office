@@ -139,6 +139,7 @@ const hostMessageSchema = z.discriminatedUnion("type", [
       reason: z
         .enum([
           "provider-unavailable",
+          "workspace-required",
           "provider-executable-unavailable",
           "provider-transport-unavailable",
           "unsupported-version",

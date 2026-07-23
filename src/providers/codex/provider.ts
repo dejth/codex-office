@@ -14,6 +14,7 @@ import {
 
 export type ProviderDiagnostic =
   | "none"
+  | "workspace-required"
   | "executable-unavailable"
   | "transport-unavailable"
   | "unsupported-version"
@@ -42,10 +43,17 @@ export class CodexProvider implements AgentProvider {
       new CodexStdioTransport(),
     private readonly now: () => Date = () => new Date(),
     private readonly workspaceCwd?: string,
+    private readonly requireWorkspace = false,
   ) {}
 
   async connect(): Promise<void> {
     if (this.transport !== undefined) return;
+    if (this.requireWorkspace && this.workspaceCwd === undefined) {
+      this.connected = false;
+      this.currentDiagnostic = "workspace-required";
+      this.current = emptySnapshot("disconnected");
+      return;
+    }
     const transport = this.createTransport();
     const generation = ++this.generation;
     this.transport = transport;

@@ -14,6 +14,7 @@ describe("Connection notice", () => {
 
   it.each([
     ["disconnected", null, "Waiting for a local provider"],
+    ["disconnected", "workspace-required", "Open a workspace folder"],
     ["degraded", null, "Showing the last safe snapshot"],
     [
       "degraded",

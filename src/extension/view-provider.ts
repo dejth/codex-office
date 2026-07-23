@@ -25,7 +25,12 @@ export class CodexOfficeViewProvider
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly provider: AgentProvider = new CodexProvider(),
+    private readonly provider: AgentProvider = new CodexProvider(
+      undefined,
+      undefined,
+      undefined,
+      true,
+    ),
   ) {}
 
   resolveWebviewView(view: vscode.WebviewView): void {
@@ -180,7 +185,9 @@ export class CodexOfficeViewProvider
         ? null
         : snapshot.connection === "degraded"
           ? providerReason(this.provider.diagnostic())
-          : "provider-unavailable",
+          : this.provider.diagnostic() === "workspace-required"
+            ? "workspace-required"
+            : "provider-unavailable",
     );
     this.post({
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
@@ -194,6 +201,7 @@ export class CodexOfficeViewProvider
     state: "connected" | "disconnected" | "degraded",
     reason:
       | "provider-unavailable"
+      | "workspace-required"
       | "provider-executable-unavailable"
       | "provider-transport-unavailable"
       | "unsupported-version"
@@ -246,10 +254,13 @@ function providerReason(
   diagnostic: ProviderDiagnostic,
 ):
   | "provider-executable-unavailable"
+  | "workspace-required"
   | "provider-transport-unavailable"
   | "unsupported-version"
   | "invalid-provider-data" {
   switch (diagnostic) {
+    case "workspace-required":
+      return "workspace-required";
     case "executable-unavailable":
       return "provider-executable-unavailable";
     case "transport-unavailable":

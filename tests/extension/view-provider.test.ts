@@ -215,4 +215,28 @@ describe("CodexOfficeViewProvider", () => {
     expect(JSON.stringify(harness.posted)).not.toContain("/Applications/");
     harness.dispose();
   });
+
+  it("preserves workspace-required for an empty disconnected host", async () => {
+    const provider = new FakeProvider();
+    provider.snapshot.mockResolvedValue({
+      ...empty,
+      connection: "disconnected",
+    });
+    provider.diagnostic.mockReturnValue("workspace-required");
+    const harness = createView();
+    const viewProvider = new CodexOfficeViewProvider({} as never, provider);
+    viewProvider.resolveWebviewView(harness.view as never);
+
+    harness.receive({ protocolVersion: 1, type: "ready" });
+    await flush();
+
+    expect(harness.posted).toContainEqual(
+      expect.objectContaining({
+        type: "connection",
+        state: "disconnected",
+        reason: "workspace-required",
+      }),
+    );
+    harness.dispose();
+  });
 });

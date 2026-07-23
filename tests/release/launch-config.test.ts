@@ -26,11 +26,14 @@ describe("VS Code Extension Host launch configuration", () => {
         name: "Run Codex Office Extension",
         type: "extensionHost",
         request: "launch",
-        args: ["--extensionDevelopmentPath=${workspaceFolder}"],
+        args: [
+          "--disable-extensions",
+          "--extensionDevelopmentPath=${workspaceFolder}",
+        ],
         outFiles: ["${workspaceFolder}/dist/**/*.js"],
         sourceMaps: true,
       },
     ]);
-    expect(launch.configurations[0]?.args).toHaveLength(1);
+    expect(launch.configurations[0]?.args).toHaveLength(2);
   });
 });
