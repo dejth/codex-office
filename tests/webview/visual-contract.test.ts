@@ -41,5 +41,7 @@ describe("Office and Meter visual contract", () => {
     expect(css).toContain(
       '.office-empty-state[data-reduced-motion="false"] .pixel-character',
     );
+    expect(css).toContain("width: min(100%, 192px)");
+    expect(css).toContain("width: min(92%, 192px)");
   });
 });

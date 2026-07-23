@@ -27,3 +27,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Local two-frame pixel-art action sprites for every Office status, with deterministic frame stepping and static reduced-motion fallbacks.
 - Five-frame Office animations with a dedicated blink frame, plus a monochrome mascot-head Activity Bar icon.
 - Five-frame blinking animation for connected-empty, degraded, disconnected, and workspace-required Office mascots.
+
+### Fixed
+
+- Reworked all nine Office animations around one larger, high-detail mascot
+  identity with complete five-frame status actions, stable eye anchors, true
+  alpha, and padded 128 × 128 frames rendered at up to 192 CSS pixels.
+- Normalized standing and furniture baselines across statuses, matched the
+  visible scale of thinking and unknown mascots, and repaired the thinking
+  arm and centered ellipsis.
