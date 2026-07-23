@@ -5,17 +5,36 @@ import { ConnectionNotice } from "../../src/webview/connection-notice";
 
 describe("Connection notice", () => {
   it("is silent while connected", () => {
-    expect(renderToStaticMarkup(<ConnectionNotice state="connected" />)).toBe(
-      "",
-    );
+    expect(
+      renderToStaticMarkup(
+        <ConnectionNotice state="connected" reason={null} />,
+      ),
+    ).toBe("");
   });
 
   it.each([
-    ["disconnected", "Waiting for a local provider"],
-    ["degraded", "Showing the last safe snapshot"],
-  ] as const)("renders a non-color status cue for %s", (state, text) => {
-    const html = renderToStaticMarkup(<ConnectionNotice state={state} />);
-    expect(html).toContain('role="status"');
-    expect(html).toContain(text);
-  });
+    ["disconnected", null, "Waiting for a local provider"],
+    ["degraded", null, "Showing the last safe snapshot"],
+    [
+      "degraded",
+      "provider-executable-unavailable",
+      "Codex executable was not found",
+    ],
+    [
+      "degraded",
+      "provider-transport-unavailable",
+      "provider stopped responding",
+    ],
+    ["degraded", "unsupported-version", "currently supports 0.138.0"],
+    ["degraded", "invalid-provider-data", "invalid provider data"],
+  ] as const)(
+    "renders a non-color status cue for %s",
+    (state, reason, text) => {
+      const html = renderToStaticMarkup(
+        <ConnectionNotice state={state} reason={reason} />,
+      );
+      expect(html).toContain('role="status"');
+      expect(html).toContain(text);
+    },
+  );
 });

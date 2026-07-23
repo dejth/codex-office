@@ -18,10 +18,11 @@ describe("deterministic composed-view baselines", () => {
         reducedMotion
         selectedId="agent_preview_3"
         onSelect={() => undefined}
+        connection="connected"
       />,
     );
     expect(digest(markup)).toBe(
-      "26f0223451f49b5ec5c85f9398170ee02d8f95424e06917ed61f421ee688ffe7",
+      "4556b81ccee353e2e2574b9f4823e718ca2a7b675a328d15e18fe5b3f78a211e",
     );
   });
 
