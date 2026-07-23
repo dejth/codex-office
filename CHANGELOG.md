@@ -13,3 +13,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Fail-closed Codex 0.138.0 capability negotiation for privacy-safe snapshot polling.
 - Versioned, runtime-validated extension/webview protocol with opaque snapshot projection and bounded payloads.
 - Accessible agent-tree fixture preview with deterministic keyboard navigation, text status cues, and narrow-width layout.
+- Deterministic code-native Office diorama with status stations, presentation-only motion state, and reduced-motion fallbacks.

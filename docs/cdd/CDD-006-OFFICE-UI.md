@@ -1,6 +1,6 @@
 # CDD-006 — Office UI Contract
 
-Status: Implemented for fixture tree; Office motion and Meter pending
+Status: Implemented for fixture tree and Office state machine; Meter pending
 
 ## Modes
 
@@ -11,6 +11,10 @@ Office and Meter share selection, filters, timestamps, and domain state. Switchi
 Thinking: thought bubble; reading: shelf/reading pose; editing: desk typing; running command: terminal station; waiting approval: high-priority badge; completed: calm success pose; failed: non-flashing warning; idle: subtle rest; unknown: neutral question state.
 
 Animations communicate atmosphere, never the sole meaning. Text and icon labels are always available.
+
+The Office machine projects only `status` plus the reduced-motion preference into presentation state: station, pose, accent, motion, and phase. Repeated snapshots do not restart motion. Status changes crossfade to the deterministic target; enabling reduced motion cuts directly to a static pose with no transition.
+
+Both `codexOffice.reducedMotion` and the operating-system `prefers-reduced-motion` media query disable Office animation. Animation state never contains agent identity, task/session content, usage, paths, or provider data.
 
 ## Responsive behavior
 
@@ -28,3 +32,4 @@ Keyboard traversal, visible focus, appropriate headings, live-region restraint, 
 - Every status has both an icon and readable text. Accessible names include agent, status, and usage availability.
 - At widths up to 360 px, cards stack identity/status above usage while preserving hierarchy and focus behavior.
 - Fixture selection lives above the Office/Meter branch so switching modes does not reset it.
+- The code-native Office diorama and accessible tree are parallel views of the same snapshot and selection. The tree remains available beneath the visual floor.

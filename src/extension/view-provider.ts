@@ -12,6 +12,7 @@ import { previewSnapshot } from "../protocol/preview-fixture";
 export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private messageSubscription?: vscode.Disposable;
+  private configurationSubscription?: vscode.Disposable;
   private sequence = 0;
 
   constructor(private readonly extensionUri: vscode.Uri) {}
@@ -20,6 +21,7 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
     this.view = view;
     this.sequence = 0;
     this.messageSubscription?.dispose();
+    this.configurationSubscription?.dispose();
     const messageSubscription = view.webview.onDidReceiveMessage(
       (value: unknown) => {
         const parsed = parseWebviewToHostMessage(value);
@@ -45,15 +47,26 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
       },
     );
     this.messageSubscription = messageSubscription;
+    const configurationSubscription = vscode.workspace.onDidChangeConfiguration(
+      (event) => {
+        if (event.affectsConfiguration("codexOffice")) this.sendSettings();
+      },
+    );
+    this.configurationSubscription = configurationSubscription;
     view.onDidDispose(() => {
       messageSubscription.dispose();
+      configurationSubscription.dispose();
       if (this.view === view) {
         this.messageSubscription = undefined;
+        this.configurationSubscription = undefined;
         this.view = undefined;
       }
     });
     const script = view.webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "dist", "webview.js"),
+    );
+    const stylesheet = view.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "dist", "webview.css"),
     );
     const nonce = randomBytes(16).toString("hex");
     view.webview.options = {
@@ -63,7 +76,8 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
     view.webview.html = `<!doctype html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${view.webview.cspSource} data:; style-src ${view.webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${view.webview.cspSource} data:; style-src ${view.webview.cspSource}; script-src 'nonce-${nonce}';">
+<link rel="stylesheet" href="${stylesheet}">
 <title>Codex Office</title></head><body><div id="root"></div>
 <script nonce="${nonce}" src="${script}"></script></body></html>`;
   }
@@ -77,17 +91,7 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private sendInitialState(): void {
-    const configuration = vscode.workspace.getConfiguration("codexOffice");
-    const configuredView = configuration.get<string>("defaultView");
-    const defaultView = configuredView === "meter" ? "meter" : "office";
-
-    this.post({
-      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
-      sequence: this.nextSequence(),
-      type: "settings",
-      defaultView,
-      reducedMotion: configuration.get<boolean>("reducedMotion", false),
-    });
+    this.sendSettings();
     this.post({
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
       sequence: this.nextSequence(),
@@ -103,6 +107,18 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
+  private sendSettings(): void {
+    const configuration = vscode.workspace.getConfiguration("codexOffice");
+    const configuredView = configuration.get<string>("defaultView");
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "settings",
+      defaultView: configuredView === "meter" ? "meter" : "office",
+      reducedMotion: configuration.get<boolean>("reducedMotion", false),
+    });
+  }
+
   private post(message: HostToWebviewMessage): void {
     const parsed = parseHostToWebviewMessage(message);
     if (!parsed.ok) return;
@@ -112,7 +128,9 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
   private nextSequence(): number {
     if (this.sequence >= Number.MAX_SAFE_INTEGER) {
       this.messageSubscription?.dispose();
+      this.configurationSubscription?.dispose();
       this.messageSubscription = undefined;
+      this.configurationSubscription = undefined;
       this.view = undefined;
       return Number.MAX_SAFE_INTEGER;
     }
