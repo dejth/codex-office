@@ -5,6 +5,8 @@ import type { ConnectionReason } from "./state";
 
 const REASON_MESSAGES: Partial<Record<NonNullable<ConnectionReason>, string>> =
   {
+    "workspace-required":
+      "Open a workspace folder to show only its local Codex sessions.",
     "provider-executable-unavailable":
       "Codex executable was not found. Install Codex CLI or use a supported Codex installation.",
     "provider-transport-unavailable":

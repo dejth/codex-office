@@ -30,7 +30,8 @@ Keep `pnpm dev` running, then press `F5` in VS Code and choose
 loads the current workspace build in an Extension Development Host regardless
 of the active editor. Open **Codex Office** in the Activity Bar. The development
 host starts without a workspace; use **File → Open Folder…** there when testing
-workspace-scoped discovery.
+workspace-scoped discovery. The debug profile disables unrelated installed
+extensions so their output does not pollute the shared Debug Console.
 
 ## Documentation map
 

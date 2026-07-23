@@ -55,11 +55,18 @@ describe("webview protocol", () => {
     {
       protocolVersion: V,
       sequence: 5,
+      type: "connection",
+      state: "disconnected",
+      reason: "workspace-required",
+    },
+    {
+      protocolVersion: V,
+      sequence: 6,
       type: "settings",
       defaultView: "office",
       reducedMotion: true,
     },
-    { protocolVersion: V, sequence: 6, type: "refresh-requested" },
+    { protocolVersion: V, sequence: 7, type: "refresh-requested" },
   ])("accepts every host message type", (message) => {
     expect(parseHostToWebviewMessage(message)).toEqual({ ok: true, message });
   });
