@@ -14,3 +14,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Versioned, runtime-validated extension/webview protocol with opaque snapshot projection and bounded payloads.
 - Accessible agent-tree fixture preview with deterministic keyboard navigation, text status cues, and narrow-width layout.
 - Deterministic code-native Office diorama with status stations, presentation-only motion state, and reduced-motion fallbacks.
+- Honest Meter view with per-thread components, explicit provenance, overlap caveats, and safe handling of missing or overflowing usage.
