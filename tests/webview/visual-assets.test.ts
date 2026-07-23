@@ -16,6 +16,7 @@ interface AssetManifest {
     frameWidth: number;
     frameHeight: number;
     frames: number;
+    blinkFrame: number;
   };
   budgetBytes: { perAsset: number; total: number };
   assets: Record<string, AssetEntry>;
@@ -91,7 +92,11 @@ describe("Office production visual assets", () => {
     expect(total).toBeLessThanOrEqual(manifest.budgetBytes.total);
   });
 
-  it("provides a deterministic two-frame RGBA sprite for every status", () => {
+  it("provides a deterministic five-frame RGBA sprite for every status", () => {
+    expect(manifest.animationGrid).toMatchObject({
+      frames: 5,
+      blinkFrame: 3,
+    });
     expect(Object.keys(manifest.animations)).toEqual(statuses);
     expect(readdirSync(resolve(officeRoot, "animation")).sort()).toEqual(
       Object.values(manifest.animations)
@@ -114,5 +119,19 @@ describe("Office production visual assets", () => {
       );
       expect(entry.bytes).toBeLessThanOrEqual(manifest.budgetBytes.perAsset);
     }
+  });
+
+  it("uses a monochrome mascot head for the Activity Bar", () => {
+    const icon = readFileSync(
+      resolve(process.cwd(), "assets/activity-bar.svg"),
+      "utf8",
+    );
+
+    expect(icon).toContain('viewBox="0 0 24 24"');
+    expect(icon).toContain("currentColor");
+    expect(icon).toContain("<circle");
+    expect(icon.match(/<path /gu)).toHaveLength(5);
+    expect(icon).not.toMatch(/#[0-9A-Fa-f]{3,8}/u);
+    expect(icon).not.toContain("M4 20V8L12 3L20 8V20H4Z");
   });
 });

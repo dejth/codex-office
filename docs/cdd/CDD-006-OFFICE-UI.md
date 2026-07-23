@@ -65,10 +65,11 @@ Keyboard traversal, visible focus, appropriate headings, live-region restraint, 
 
 ## Production visual assets
 
-The Office uses one local, transparent two-frame pixel-art sprite per supported
-status. Frames change the character action or prop rather than translating the
-whole bitmap. Images are decorative and never replace readable status, station,
-hierarchy, or selection cues. Runtime rendering makes no network requests.
+The Office uses one local, transparent five-frame pixel-art sprite per
+supported status. Frame three is a brief eye blink; the remaining frames change
+the character action or prop rather than translating the whole bitmap. Images
+are decorative and never replace readable status, station, hierarchy, or
+selection cues. Runtime rendering makes no network requests.
 
 Asset identity, dimensions, hashes, and size budgets are versioned in
 `assets/office/manifest.json`; palette, scaling, motion, theme behavior, and the

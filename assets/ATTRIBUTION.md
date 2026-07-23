@@ -35,19 +35,20 @@ Production prompt:
 - Input reference: the project-owned status atlas above
 - Files: `assets/office/animation/*.png`
 - License: distributed as project assets under the repository MIT license
-- Modifications: chroma-key removal, deterministic 3 × 3 and two-frame crop,
+- Modifications: chroma-key removal, deterministic five-frame crop,
   transparent trimming, nearest-neighbor resize, and PNG compression
 - Source files:
-  `assets/office/source/codex-office-animation-atlas-chroma.png` and
-  `assets/office/source/codex-office-animation-atlas.png`
+  `assets/office/source/five-frame-*-chroma.png` and matching transparent
+  `assets/office/source/five-frame-*.png` atlases
 
 Production prompt:
 
-> Transform the supplied 3 × 3 status atlas into the same robot and status
-> order, with two complete side-by-side frames per cell. Each pair changes the
-> character action or prop rather than translating the complete image. Preserve
-> the cream, navy, amber, coral, and teal pixel-art identity on a removable flat
-> chroma-green background, with no text, watermark, borders, or shadows.
+> Create three strict 5 × 3 animation atlases using the supplied Codex Office
+> robot identity. Each status row progresses through five baseline-aligned
+> action frames; frame three closes both eyes for a visible blink and all other
+> frames keep the eyes open. Preserve status props, cream/navy/amber/coral/teal
+> pixel art, cell gutters, and a removable flat chroma-green background. No
+> text, watermark, borders, shadows, overlap, or whole-character translation.
 
 See `docs/design/OFFICE_VISUAL_SYSTEM.md` for the asset pipeline, conventions,
 and deterministic manifest.
