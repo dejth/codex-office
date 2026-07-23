@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import {
@@ -11,6 +11,7 @@ import {
 import { previewSnapshot } from "../protocol/preview-fixture";
 import "./styles.css";
 import { AgentTree } from "./agent-tree";
+import { OfficeView } from "./office-view";
 import { replaceSnapshot } from "./state";
 
 type ViewMode = "office" | "meter";
@@ -26,6 +27,7 @@ function App(): React.JSX.Element {
   const [announcement, setAnnouncement] = useState("");
   const [snapshot, setSnapshot] = useState<WebviewSnapshot>(previewSnapshot);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const lastSequenceByType = useRef(new Map<string, number>());
 
   useEffect(() => {
@@ -43,6 +45,7 @@ function App(): React.JSX.Element {
 
       if (parsed.message.type === "settings") {
         setMode(parsed.message.defaultView);
+        setReducedMotion(parsed.message.reducedMotion);
       } else if (parsed.message.type === "snapshot") {
         const nextSnapshot = parsed.message.snapshot;
         setSnapshot((current) => replaceSnapshot(current, nextSnapshot));
@@ -68,14 +71,14 @@ function App(): React.JSX.Element {
     });
   };
 
-  const selectAgent = (agentId: string): void => {
+  const selectAgent = useCallback((agentId: string): void => {
     setSelectedId(agentId);
     vscode.postMessage({
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
       type: "select-agent",
       agentId,
     });
-  };
+  }, []);
 
   return (
     <main>
@@ -97,23 +100,25 @@ function App(): React.JSX.Element {
         </nav>
       </header>
       {mode === "office" ? (
-        <section className="office-view" aria-labelledby="office-heading">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Fixture preview</p>
-              <h1 id="office-heading">Agent hierarchy</h1>
-            </div>
-            <span className="preview-badge">Synthetic data</span>
-          </div>
-          <p className="view-summary">
-            Navigate with arrow keys. Press Enter or Space to select an agent.
-          </p>
-          <AgentTree
+        <>
+          <OfficeView
             agents={snapshot.agents}
+            reducedMotion={reducedMotion}
             selectedId={selectedId}
             onSelect={selectAgent}
           />
-        </section>
+          <div className="tree-fallback">
+            <h2>Accessible agent list</h2>
+            <p className="view-summary">
+              Navigate with arrow keys. Press Enter or Space to select.
+            </p>
+            <AgentTree
+              agents={snapshot.agents}
+              selectedId={selectedId}
+              onSelect={selectAgent}
+            />
+          </div>
+        </>
       ) : (
         <section aria-live="polite" className="empty-state">
           <div className="office-icon" aria-hidden="true">
