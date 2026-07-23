@@ -1,4 +1,17 @@
-import type { WebviewSnapshot } from "../protocol/webview";
+import type {
+  HostToWebviewMessage,
+  WebviewSnapshot,
+} from "../protocol/webview";
+
+export type ConnectionReason = Extract<
+  HostToWebviewMessage,
+  { type: "connection" }
+>["reason"];
+
+export interface ConnectionState {
+  state: WebviewSnapshot["connection"];
+  reason: ConnectionReason;
+}
 
 /** Snapshot messages are authoritative, including an empty agent list. */
 export function replaceSnapshot(
@@ -9,8 +22,18 @@ export function replaceSnapshot(
 }
 
 export function replaceConnection(
-  _current: WebviewSnapshot["connection"],
-  next: WebviewSnapshot["connection"],
-): WebviewSnapshot["connection"] {
+  _current: ConnectionState,
+  next: ConnectionState,
+): ConnectionState {
   return next;
+}
+
+export function replaceConnectionFromSnapshot(
+  current: ConnectionState,
+  nextState: WebviewSnapshot["connection"],
+): ConnectionState {
+  return {
+    state: nextState,
+    reason: nextState === "connected" ? null : current.reason,
+  };
 }

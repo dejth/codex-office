@@ -25,6 +25,7 @@ describe("Office view", () => {
         reducedMotion={false}
         selectedId="agent_preview_3"
         onSelect={() => undefined}
+        connection="connected"
       />,
     );
 
@@ -52,6 +53,7 @@ describe("Office view", () => {
         reducedMotion={false}
         selectedId={null}
         onSelect={() => undefined}
+        connection="connected"
       />,
     );
 
@@ -68,11 +70,55 @@ describe("Office view", () => {
         reducedMotion
         selectedId={null}
         onSelect={() => undefined}
+        connection="connected"
       />,
     );
 
     expect(html).toContain('data-reduced-motion="true"');
     expect(html.match(/data-motion="none"/g)).toHaveLength(4);
     expect(html).not.toContain('data-transition="crossfade"');
+  });
+
+  it.each([
+    ["connected", "No Codex sessions found", "pixel-character-idle"],
+    ["degraded", "Codex provider unavailable", "pixel-character-failed"],
+    ["disconnected", "Waiting for Codex provider", "pixel-character-unknown"],
+  ] as const)(
+    "renders an honest, readable %s empty state",
+    (connection, heading, character) => {
+      const html = renderToStaticMarkup(
+        <OfficeView
+          agents={[]}
+          reducedMotion
+          selectedId={null}
+          onSelect={() => undefined}
+          connection={connection}
+        />,
+      );
+
+      expect(html).toContain(`<h2>${heading}</h2>`);
+      expect(html).toContain(character);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).not.toContain("Synthetic data");
+      expect(html).not.toContain("Live office preview");
+      expect(html).not.toContain('aria-label="Visual agent office"');
+    },
+  );
+
+  it("labels populated production data without calling it synthetic or live", () => {
+    const html = renderToStaticMarkup(
+      <OfficeView
+        agents={previewSnapshot.agents}
+        reducedMotion
+        selectedId={null}
+        onSelect={() => undefined}
+        connection="connected"
+      />,
+    );
+
+    expect(html).toContain("Codex workspace");
+    expect(html).toContain("Local sessions");
+    expect(html).not.toContain("Synthetic data");
+    expect(html).not.toContain("Live office preview");
   });
 });

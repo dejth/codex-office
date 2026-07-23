@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 
-import type { WebviewAgent } from "../protocol/webview";
+import type { WebviewAgent, WebviewSnapshot } from "../protocol/webview";
 import {
   createOfficeAnimationState,
   nextOfficeTransitionRevision,
@@ -38,6 +38,7 @@ interface OfficeViewProps {
   reducedMotion: boolean;
   selectedId: string | null;
   onSelect(id: string): void;
+  connection: WebviewSnapshot["connection"];
 }
 
 interface PositionedAgent {
@@ -72,46 +73,92 @@ export const OfficeView = memo(function OfficeView({
   reducedMotion,
   selectedId,
   onSelect,
+  connection,
 }: OfficeViewProps): React.JSX.Element {
   const positioned = useMemo(() => flattenOfficeAgents(agents), [agents]);
+  const isEmpty = positioned.length === 0;
 
   return (
     <section className="office-view" aria-labelledby="office-heading">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Live office preview</p>
+          <p className="eyebrow">Codex workspace</p>
           <h1 id="office-heading">Agent floor</h1>
         </div>
-        <span className="preview-badge">Synthetic data</span>
+        {isEmpty ? null : <span className="preview-badge">Local sessions</span>}
       </div>
       <p className="view-summary">
-        Each agent moves to a deterministic station for its current status.
+        Sessions appear at deterministic stations using status reported by the
+        local Codex provider.
       </p>
-      <div
-        className="office-room"
-        data-reduced-motion={reducedMotion ? "true" : "false"}
-        aria-label="Visual agent office"
-      >
-        <div className="office-wall" aria-hidden="true">
-          <span className="office-logo">CO</span>
-          <span className="office-clock">09:41</span>
+      {isEmpty ? (
+        <OfficeEmptyState connection={connection} />
+      ) : (
+        <div
+          className="office-room"
+          data-reduced-motion={reducedMotion ? "true" : "false"}
+          aria-label="Visual agent office"
+        >
+          <div className="office-wall" aria-hidden="true">
+            <span className="office-logo">CO</span>
+            <span className="office-clock">09:41</span>
+          </div>
+          <div className="office-floor">
+            {positioned.map(({ agent, level }) => (
+              <OfficeAgent
+                key={agent.id}
+                agent={agent}
+                level={level}
+                reducedMotion={reducedMotion}
+                selected={selectedId === agent.id}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
         </div>
-        <div className="office-floor">
-          {positioned.map(({ agent, level }) => (
-            <OfficeAgent
-              key={agent.id}
-              agent={agent}
-              level={level}
-              reducedMotion={reducedMotion}
-              selected={selectedId === agent.id}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-      </div>
+      )}
     </section>
   );
 });
+
+const EMPTY_STATE_COPY: Record<
+  WebviewSnapshot["connection"],
+  { title: string; detail: string; character: WebviewAgent["status"] }
+> = {
+  connected: {
+    title: "No Codex sessions found",
+    detail: "Start a Codex session in this workspace, then refresh the view.",
+    character: "idle",
+  },
+  degraded: {
+    title: "Codex provider unavailable",
+    detail: "The Office will update after the local provider recovers.",
+    character: "failed",
+  },
+  disconnected: {
+    title: "Waiting for Codex provider",
+    detail: "The Office will appear after a local provider connects.",
+    character: "unknown",
+  },
+};
+
+function OfficeEmptyState({
+  connection,
+}: {
+  connection: WebviewSnapshot["connection"];
+}): React.JSX.Element {
+  const copy = EMPTY_STATE_COPY[connection];
+  return (
+    <div className="office-empty-state">
+      <span
+        className={`pixel-character pixel-character-${copy.character}`}
+        aria-hidden="true"
+      />
+      <h2>{copy.title}</h2>
+      <p>{copy.detail}</p>
+    </div>
+  );
+}
 
 interface OfficeAgentProps {
   agent: WebviewAgent;
