@@ -55,7 +55,10 @@ attachment, private IPC, rollout scanning, and content-bearing resume remain
 out of scope without an accepted privacy ADR. An empty state-database result is
 authoritative, not an error.
 
-The transport resolves the executable without a shell from the extension-host
-PATH and bounded platform installation locations, including the macOS ChatGPT
-application bundle. Resolution and transport failures expose only bounded
-content-free codes; executable paths are never projected or logged.
+The transport resolves the executable without a shell from bounded user-local
+installation locations, the extension-host PATH, and platform application
+locations, including the macOS ChatGPT application bundle. User-local
+locations take precedence because a GUI host can inject a bundled pre-release
+binary ahead of the maintainer-selected CLI. Resolution and transport failures
+expose only bounded content-free codes; executable paths are never projected
+or logged.
