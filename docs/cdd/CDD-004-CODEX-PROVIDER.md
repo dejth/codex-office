@@ -58,6 +58,10 @@ attachment, private IPC, rollout scanning, and content-bearing resume remain
 out of scope without an accepted privacy ADR. An empty state-database result is
 authoritative, not an error.
 
+The production extension requires an open workspace before connecting. With no
+workspace it does not start App Server or request global persisted sessions;
+the webview receives only the bounded `workspace-required` diagnostic.
+
 The transport resolves the executable without a shell from bounded user-local
 installation locations, the extension-host PATH, and platform application
 locations, including the macOS ChatGPT application bundle. User-local

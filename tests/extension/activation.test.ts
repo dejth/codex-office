@@ -41,8 +41,13 @@ describe("extension activation", () => {
       expect.anything(),
     );
     const registered = vscodeMock.registerWebviewViewProvider.mock
-      .calls[0]?.[1] as { provider?: { workspaceCwd?: string } } | undefined;
+      .calls[0]?.[1] as
+      | {
+          provider?: { workspaceCwd?: string; requireWorkspace?: boolean };
+        }
+      | undefined;
     expect(registered?.provider?.workspaceCwd).toBe("/synthetic/workspace");
+    expect(registered?.provider?.requireWorkspace).toBe(true);
     expect(vscodeMock.registerCommand).toHaveBeenCalledTimes(2);
     expect(context.subscriptions).toHaveLength(4);
   });

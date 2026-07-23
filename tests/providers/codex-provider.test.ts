@@ -86,6 +86,26 @@ function configuredTransport(...reads: unknown[]): FakeTransport {
 }
 
 describe("CodexProvider", () => {
+  it("does not start transport when workspace-scoped discovery has no workspace", async () => {
+    const transport = configuredTransport(thread("global-thread", null));
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+      undefined,
+      true,
+    );
+
+    await provider.connect();
+
+    expect(transport.started).toBe(0);
+    expect(transport.calls).toEqual([]);
+    expect(provider.diagnostic()).toBe("workspace-required");
+    expect(await provider.snapshot()).toMatchObject({
+      agents: [],
+      connection: "disconnected",
+    });
+  });
+
   it("ignores a stale initialize after disconnect and reconnect", async () => {
     let rejectFirst: ((error: Error) => void) | undefined;
     const first = new FakeTransport().queue(

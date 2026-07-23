@@ -27,6 +27,8 @@ At narrow width, prioritize agent, status, and total. Inspector becomes an in-vi
   live.
 - A connected authoritative empty snapshot renders an idle character with
   readable guidance to start a Codex session in the current workspace.
+- A host with no open workspace renders workspace-required guidance and never
+  presents global persisted sessions as current agents.
 - Degraded and disconnected states render failed and unknown characters
   respectively, alongside non-color text. The character is decorative; the
   heading and detail carry the meaning.
