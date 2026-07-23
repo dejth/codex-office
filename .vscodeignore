@@ -10,6 +10,8 @@ tests/**
 assets/office/source/**
 assets/office/status-atlas.png
 assets/office/status/**
+assets/office/animation/**
+tmp/**
 .DS_Store
 .gitignore
 .vscodeignore

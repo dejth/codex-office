@@ -40,7 +40,9 @@ export type OfficeMotion =
   | "terminal-scan"
   | "attention-breathe"
   | "success-settle"
+  | "failure-recover"
   | "rest-breathe"
+  | "question-pulse"
   | "none";
 
 export interface OfficeAnimationState {
@@ -116,7 +118,7 @@ const STATUS_PROFILES = {
     station: "recovery-bay",
     pose: "warning",
     accent: "danger",
-    motion: "none",
+    motion: "failure-recover",
     phase: "settled",
   },
   idle: {
@@ -130,7 +132,7 @@ const STATUS_PROFILES = {
     station: "observation-point",
     pose: "questioning",
     accent: "neutral",
-    motion: "none",
+    motion: "question-pulse",
     phase: "settled",
   },
 } as const satisfies Record<AgentStatus, MotionProfile>;
