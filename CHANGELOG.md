@@ -21,3 +21,5 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - State-database-only Codex session discovery with workspace scoping, shell-free executable resolution, and conservative cross-process status labels.
 - Honest provider-backed Office labels, reason-specific connection notices, and accessible connected, degraded, and disconnected empty states using local production artwork.
 - Deterministic executable precedence that prefers a supported user-local Codex CLI over incompatible GUI-bundled candidates.
+- A checked-in Extension Host launch configuration so F5 always loads the current workspace build instead of an editor-specific or stale debug target.
+- Verified capability parsing for the `codex-office/0.138.0` Extension Host fingerprint without weakening the exact runtime allowlist.
