@@ -4,18 +4,27 @@ import { randomBytes } from "node:crypto";
 import {
   parseHostToWebviewMessage,
   parseWebviewToHostMessage,
+  projectOfficeSnapshot,
   WEBVIEW_PROTOCOL_VERSION,
   type HostToWebviewMessage,
 } from "../protocol/webview";
-import { previewSnapshot } from "../protocol/preview-fixture";
+import { CodexProvider, type AgentProvider } from "../providers/codex/provider";
 
-export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
+export class CodexOfficeViewProvider
+  implements vscode.WebviewViewProvider, vscode.Disposable
+{
   private view?: vscode.WebviewView;
   private messageSubscription?: vscode.Disposable;
   private configurationSubscription?: vscode.Disposable;
+  private providerSubscription?: () => void;
+  private refreshPromise?: Promise<void>;
   private sequence = 0;
+  private generation = 0;
 
-  constructor(private readonly extensionUri: vscode.Uri) {}
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    private readonly provider: AgentProvider = new CodexProvider(),
+  ) {}
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
@@ -30,6 +39,7 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
         switch (parsed.message.type) {
           case "ready":
             this.sendInitialState();
+            void this.refreshProvider(false);
             break;
           case "refresh":
             this.refresh();
@@ -57,6 +67,11 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
       messageSubscription.dispose();
       configurationSubscription.dispose();
       if (this.view === view) {
+        this.generation += 1;
+        this.providerSubscription?.();
+        this.providerSubscription = undefined;
+        this.refreshPromise = undefined;
+        void this.provider.disconnect();
         this.messageSubscription = undefined;
         this.configurationSubscription = undefined;
         this.view = undefined;
@@ -88,22 +103,89 @@ export class CodexOfficeViewProvider implements vscode.WebviewViewProvider {
       sequence: this.nextSequence(),
       type: "refresh-requested",
     });
+    void this.refreshProvider(true);
+  }
+
+  dispose(): void {
+    this.generation += 1;
+    this.providerSubscription?.();
+    this.providerSubscription = undefined;
+    this.refreshPromise = undefined;
+    this.messageSubscription?.dispose();
+    this.configurationSubscription?.dispose();
+    this.view = undefined;
+    void this.provider.disconnect();
   }
 
   private sendInitialState(): void {
     this.sendSettings();
-    this.post({
-      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
-      sequence: this.nextSequence(),
-      type: "connection",
-      state: "disconnected",
-      reason: "provider-unavailable",
+  }
+
+  private refreshProvider(force: boolean): Promise<void> {
+    if (this.refreshPromise !== undefined) return this.refreshPromise;
+    const generation = this.generation;
+    const pending = async () => {
+      try {
+        await this.provider.connect();
+        if (this.providerSubscription === undefined) {
+          this.providerSubscription = this.provider.subscribe((snapshot) => {
+            if (generation === this.generation) this.sendSnapshot(snapshot);
+          });
+        }
+        const snapshot = force
+          ? await this.provider.refresh()
+          : await this.provider.snapshot();
+        if (generation === this.generation) this.sendSnapshot(snapshot);
+      } catch {
+        if (generation === this.generation)
+          this.sendConnection("degraded", "provider-unavailable");
+      }
+    };
+    this.refreshPromise = pending();
+    const current = this.refreshPromise;
+    return current.finally(() => {
+      if (this.refreshPromise === current) this.refreshPromise = undefined;
     });
+  }
+
+  private sendSnapshot(
+    snapshot: Awaited<ReturnType<AgentProvider["snapshot"]>>,
+  ): void {
+    const projection = projectOfficeSnapshot(snapshot);
+    if (!projection.ok) {
+      this.sendConnection("degraded", "invalid-provider-data");
+      return;
+    }
+    this.sendConnection(
+      snapshot.connection,
+      snapshot.connection === "connected"
+        ? null
+        : snapshot.connection === "degraded"
+          ? "invalid-provider-data"
+          : "provider-unavailable",
+    );
     this.post({
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
       sequence: this.nextSequence(),
       type: "snapshot",
-      snapshot: previewSnapshot,
+      snapshot: projection.snapshot,
+    });
+  }
+
+  private sendConnection(
+    state: "connected" | "disconnected" | "degraded",
+    reason:
+      | "provider-unavailable"
+      | "invalid-provider-data"
+      | "usage-unavailable"
+      | null,
+  ): void {
+    this.post({
+      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
+      sequence: this.nextSequence(),
+      type: "connection",
+      state,
+      reason,
     });
   }
 
