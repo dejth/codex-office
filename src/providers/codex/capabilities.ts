@@ -106,16 +106,22 @@ export function negotiateCodexCapabilities(
 }
 
 function parseRuntimeVersion(userAgent: string): string | null {
-  const match =
-    /^Codex Desktop\/((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:\s|$)/.exec(
-      userAgent,
-    );
+  for (const character of userAgent) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint !== undefined && (codePoint <= 0x1f || codePoint === 0x7f)) {
+      return null;
+    }
+  }
   if (
-    match === null ||
-    userAgent.slice(match[0].length).includes("Codex Desktop/")
+    [...userAgent.matchAll(/(?:Codex Desktop|codex-office)\//gu)].length !== 1
   ) {
     return null;
   }
+  const match =
+    /^(?:Codex Desktop|codex-office)\/((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?: [\x20-\x7E]*)?$/u.exec(
+      userAgent,
+    );
+  if (match === null) return null;
   return match[1] ?? null;
 }
 

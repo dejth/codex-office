@@ -47,11 +47,27 @@ describe("negotiateCodexCapabilities", () => {
     });
   });
 
+  it("accepts the verified Extension Host fingerprint", () => {
+    const result = negotiateCodexCapabilities({
+      userAgent: "codex-office/0.138.0",
+    });
+
+    expect(result.status).toBe("partial");
+    expect(result.version).toBe("0.138.0");
+    expect(result.capabilities.hierarchyPolling).toBe(true);
+  });
+
   it.each([
     "Codex Desktop/0.138.1 (test)",
     "codex-cli/0.138.0",
     "Spoof Codex Desktop/0.138.0",
     "Codex Desktop/0.138.0 Codex Desktop/0.138.0",
+    "codex-office/0.138.0 codex-office/0.138.0",
+    "codex-office/0.138.0 Codex Desktop/0.138.0",
+    "codex-office/0.138.1",
+    "codex-office/0.138.0\nmalformed",
+    "codex-office/0.138.0\rmalformed",
+    "codex-office/0.138.0\0malformed",
     "Codex Desktop/00.138.0",
     "not-a-fingerprint",
   ])(
