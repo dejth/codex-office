@@ -20,3 +20,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Deterministic bundle/package budgets and isolated VS Code profile lifecycle validation.
 - State-database-only Codex session discovery with workspace scoping, shell-free executable resolution, and conservative cross-process status labels.
 - Honest provider-backed Office labels, reason-specific connection notices, and accessible connected, degraded, and disconnected empty states using local production artwork.
+- Deterministic executable precedence that prefers a supported user-local Codex CLI over incompatible GUI-bundled candidates.

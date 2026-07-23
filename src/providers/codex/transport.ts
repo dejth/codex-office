@@ -229,14 +229,16 @@ export function codexExecutableCandidates(
 ): string[] {
   const names = platform === "win32" ? ["codex.exe", "codex"] : ["codex"];
   return [
+    ...names.flatMap((name) => [
+      join(userHome, ".local", "bin", name),
+      join(userHome, ".cargo", "bin", name),
+      join(userHome, ".bun", "bin", name),
+    ]),
     ...(pathValue ?? "")
       .split(delimiter)
       .filter((entry) => entry.length > 0)
       .flatMap((entry) => names.map((name) => join(entry, name))),
     ...names.flatMap((name) => [
-      join(userHome, ".local", "bin", name),
-      join(userHome, ".cargo", "bin", name),
-      join(userHome, ".bun", "bin", name),
       join("/Applications/ChatGPT.app/Contents/Resources", name),
       join("/Applications/Codex.app/Contents/Resources", name),
       join("/opt/homebrew/bin", name),
