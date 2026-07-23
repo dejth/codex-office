@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 const vscodeMock = vi.hoisted(() => ({
-  registerWebviewViewProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerWebviewViewProvider: vi.fn((...args: [string, unknown]) => {
+    void args;
+    return { dispose: vi.fn() };
+  }),
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
   executeCommand: vi.fn(),
 }));
@@ -15,6 +18,7 @@ vi.mock("vscode", () => ({
     executeCommand: vscodeMock.executeCommand,
   },
   workspace: {
+    workspaceFolders: [{ uri: { fsPath: "/synthetic/workspace" } }],
     onDidChangeConfiguration: vi.fn(),
     getConfiguration: vi.fn(),
   },
@@ -36,6 +40,9 @@ describe("extension activation", () => {
       "codexOffice.sidebar",
       expect.anything(),
     );
+    const registered = vscodeMock.registerWebviewViewProvider.mock
+      .calls[0]?.[1] as { provider?: { workspaceCwd?: string } } | undefined;
+    expect(registered?.provider?.workspaceCwd).toBe("/synthetic/workspace");
     expect(vscodeMock.registerCommand).toHaveBeenCalledTimes(2);
     expect(context.subscriptions).toHaveLength(4);
   });

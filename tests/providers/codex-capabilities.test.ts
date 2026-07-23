@@ -32,7 +32,7 @@ describe("negotiateCodexCapabilities", () => {
   it("reports exact 0.138.0 as partial hierarchy-only polling", () => {
     const result = negotiateCodexCapabilities(VALID_INITIALIZE);
 
-    expect(REQUIRED_REQUEST_METHODS).not.toContain("thread/list");
+    expect(REQUIRED_REQUEST_METHODS).toEqual(["initialize", "thread/list"]);
     expect(result).toEqual({
       status: "partial",
       version: "0.138.0",
@@ -79,7 +79,7 @@ describe("negotiateCodexCapabilities", () => {
   it("distinguishes missing trusted request and notification schema evidence", () => {
     const missingRequest = negotiateCodexCapabilities(
       VALID_INITIALIZE,
-      schema({ requestMethods: ["initialize", "thread/read"] }),
+      schema({ requestMethods: ["initialize"] }),
     );
     const missingNotification = negotiateCodexCapabilities(
       VALID_INITIALIZE,
@@ -88,7 +88,7 @@ describe("negotiateCodexCapabilities", () => {
 
     expect(missingRequest.diagnostics).toContainEqual({
       code: "missing-request",
-      method: "thread/loaded/list",
+      method: "thread/list",
     });
     expect(missingNotification.diagnostics).toContainEqual({
       code: "missing-schema-notification",
