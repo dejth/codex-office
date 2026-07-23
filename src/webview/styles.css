@@ -92,7 +92,7 @@ button {
   border-radius: 12px;
 }
 .office-empty-state .pixel-character {
-  width: min(72%, 128px);
+  width: min(92%, 192px);
 }
 .office-empty-state[data-reduced-motion="false"] .pixel-character {
   animation: office-sprite-five 2.8s linear infinite;
@@ -224,7 +224,7 @@ button {
 }
 .pixel-character {
   display: block;
-  width: min(100%, 128px);
+  width: min(100%, 192px);
   aspect-ratio: 1;
   background-repeat: no-repeat;
   background-position: 0 center;

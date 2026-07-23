@@ -3,12 +3,22 @@
   "generatedAt": "2026-07-23",
   "grid": { "width": 128, "height": 128 },
   "animationGrid": {
-    "frameWidth": 64,
-    "frameHeight": 64,
+    "frameWidth": 128,
+    "frameHeight": 128,
     "frames": 5,
-    "blinkFrame": 3
+    "blinkFrame": 3,
+    "registration": "shared-crop-eye-x-foot-baseline",
+    "sourceChroma": "#00ff00",
+    "eyeColor": "#ff4fa3",
+    "motionModel": "generated-status-actions"
   },
-  "budgetBytes": { "perAsset": 24000, "total": 280000 },
+  "anchor": {
+    "eyeCenterX": 64,
+    "standingBaselineY": 120,
+    "furnitureBaselineY": 124,
+    "largeArtStatuses": ["thinking", "unknown"]
+  },
+  "budgetBytes": { "perAsset": 90000, "total": 760000 },
   "assets": {
     "thinking": {
       "file": "status/thinking.png",
@@ -59,48 +69,48 @@
   "animations": {
     "thinking": {
       "file": "animation/thinking.png",
-      "bytes": 14307,
-      "sha256": "11ce962f48af7f7ba76d136e596a0c717a863f8071b2e42970a5d478b7792720"
+      "bytes": 45058,
+      "sha256": "10ef72a3752a7fbb72aef8d5e6b2b7c7332075e3b00887bb6ae4d9817d3d06b3"
     },
     "reading": {
       "file": "animation/reading.png",
-      "bytes": 17295,
-      "sha256": "79c4e2009bc8ad3ec91dcdfa73ae6937983d8d36fc08e8de304b1f87193baa18"
+      "bytes": 54441,
+      "sha256": "12fda38b3b7f0df58149151dc886d1f54e046c9e85fb3322356e9c3829209ac2"
     },
     "editing": {
       "file": "animation/editing.png",
-      "bytes": 18976,
-      "sha256": "ad6fd7a71291e6738a410d13bd0bd0a37417134b14e623a125b364d1c0df9ee9"
+      "bytes": 60179,
+      "sha256": "df386876e95c15a49c7f447f740a45b81cf7d3648b6f847e072a907b03fc3030"
     },
     "running-command": {
       "file": "animation/running-command.png",
-      "bytes": 19382,
-      "sha256": "182e6d8397c2fd6555f8f371e4110a4c9b983f651c7b87935e926cbc118e1cc0"
+      "bytes": 52070,
+      "sha256": "28a02154809291729644bcbde33c7f7eb9e5e842238f9f72811f79ea9afbf1dc"
     },
     "waiting-approval": {
       "file": "animation/waiting-approval.png",
-      "bytes": 9005,
-      "sha256": "54f98264e0bb56ee5862eb91dc4373f4d633a5e7b944444a53d304e39084254d"
+      "bytes": 49198,
+      "sha256": "89744588d04df73fb41133f94883caa90124ff8355ca9282942c883483a67c82"
     },
     "completed": {
       "file": "animation/completed.png",
-      "bytes": 14506,
-      "sha256": "2fc5cbcb576f2c54398a279d5d59ec28058ac434da6e2627ac0d4bf6d25b5e96"
+      "bytes": 50615,
+      "sha256": "8cf71b8d8659cb51649ed9c7b96f23c23c156168b91932cb27a448c83d7daa28"
     },
     "failed": {
       "file": "animation/failed.png",
-      "bytes": 15136,
-      "sha256": "58c77ba283567041f169d02878ce825e3b20ab49663a7a22e0c4260975ea30e9"
+      "bytes": 51767,
+      "sha256": "c8f85969c0730e02c0bef148eed7b8587ef79068498d94b1559112583c510d8c"
     },
     "idle": {
       "file": "animation/idle.png",
-      "bytes": 21843,
-      "sha256": "3810204cc95d3f47550da84ca0cf11f7366493a38ae16237bc3f9274aeff6fbe"
+      "bytes": 70349,
+      "sha256": "bb6aeb962739c15cd2a287a483600b739c1aad9c291f8a6d94d633c99b74e779"
     },
     "unknown": {
       "file": "animation/unknown.png",
-      "bytes": 15967,
-      "sha256": "ff35f9f759fb83a52b8f918d6ebb1ec86bad4a265ff6a7444560128fc6ec7b69"
+      "bytes": 54707,
+      "sha256": "3e8f82dc3ed1b4aa9010610ac695c079a1e91d74cf298e0a3c14d3916399ac46"
     }
   }
 }
