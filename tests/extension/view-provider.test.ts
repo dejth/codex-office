@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { OfficeSnapshot } from "../../src/domain/model";
-import type { AgentProvider } from "../../src/providers/codex/provider";
+import type {
+  AgentProvider,
+  ProviderDiagnostic,
+} from "../../src/providers/codex/provider";
 
 const vscodeMock = vi.hoisted(() => ({
   executeCommand: vi.fn(),
@@ -35,6 +38,7 @@ class FakeProvider implements AgentProvider {
   disconnect = vi.fn(async () => undefined);
   snapshot = vi.fn(async () => structuredClone(empty));
   refresh = vi.fn(async () => structuredClone(empty));
+  diagnostic = vi.fn<() => ProviderDiagnostic>(() => "none");
   private listener?: (snapshot: OfficeSnapshot) => void;
   subscribe = vi.fn((listener: (snapshot: OfficeSnapshot) => void) => {
     this.listener = listener;
@@ -49,6 +53,7 @@ function createView() {
   let dispose: (() => void) | undefined;
   const posted: unknown[] = [];
   const view = {
+    visible: true,
     webview: {
       cspSource: "test-csp",
       options: {},
@@ -104,6 +109,7 @@ describe("CodexOfficeViewProvider", () => {
         }),
       }),
     );
+    harness.dispose();
   });
 
   it("coalesces refresh work and disconnects when the view is disposed", async () => {
@@ -160,5 +166,53 @@ describe("CodexOfficeViewProvider", () => {
     expect(second.posted).toContainEqual(
       expect.objectContaining({ type: "snapshot" }),
     );
+    second.dispose();
+  });
+
+  it("polls only while the resolved view remains visible", async () => {
+    vi.useFakeTimers();
+    try {
+      const provider = new FakeProvider();
+      const harness = createView();
+      const viewProvider = new CodexOfficeViewProvider({} as never, provider);
+      viewProvider.resolveWebviewView(harness.view as never);
+      harness.receive({ protocolVersion: 1, type: "ready" });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(provider.refresh).toHaveBeenCalledOnce();
+
+      harness.dispose();
+      await vi.advanceTimersByTimeAsync(4_000);
+      expect(provider.refresh).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("projects bounded provider diagnostics without executable paths", async () => {
+    const provider = new FakeProvider();
+    provider.snapshot.mockResolvedValue({
+      ...empty,
+      connection: "degraded",
+    });
+    provider.diagnostic.mockReturnValue("executable-unavailable");
+    const harness = createView();
+    const viewProvider = new CodexOfficeViewProvider({} as never, provider);
+    viewProvider.resolveWebviewView(harness.view as never);
+
+    harness.receive({ protocolVersion: 1, type: "ready" });
+    await flush();
+
+    expect(harness.posted).toContainEqual(
+      expect.objectContaining({
+        type: "connection",
+        state: "degraded",
+        reason: "provider-executable-unavailable",
+      }),
+    );
+    expect(JSON.stringify(harness.posted)).not.toContain("/Applications/");
+    harness.dispose();
   });
 });

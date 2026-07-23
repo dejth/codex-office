@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  codexExecutableCandidates,
   CodexStdioTransport,
   CodexTransportError,
   type AppServerProcess,
@@ -44,6 +45,26 @@ function fakeProcess() {
 }
 
 describe("CodexStdioTransport", () => {
+  it("includes GUI-safe bundled and user-local executable candidates without a shell", () => {
+    const candidates = codexExecutableCandidates(
+      "/synthetic/bin",
+      "/synthetic/home",
+      "darwin",
+    );
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        "/synthetic/bin/codex",
+        "/synthetic/home/.local/bin/codex",
+        "/Applications/ChatGPT.app/Contents/Resources/codex",
+        "/Applications/Codex.app/Contents/Resources/codex",
+      ]),
+    );
+    expect(candidates.every((candidate) => !candidate.includes(" "))).toBe(
+      true,
+    );
+  });
+
   it("correlates split JSONL responses and sends content-free notifications", async () => {
     const child = fakeProcess();
     const transport = new CodexStdioTransport({
@@ -128,8 +149,12 @@ describe("CodexStdioTransport", () => {
       });
       timedOutTransport.start();
       const timedOutRequest = timedOutTransport.request("read", {});
-      const timedOutExpectation =
-        expect(timedOutRequest).rejects.toBeInstanceOf(CodexTransportError);
+      const timedOutExpectation = expect(timedOutRequest).rejects.toMatchObject(
+        {
+          code: "timeout",
+          message: "Codex App Server transport failed",
+        },
+      );
       await vi.advanceTimersByTimeAsync(20);
       await timedOutExpectation;
     } finally {

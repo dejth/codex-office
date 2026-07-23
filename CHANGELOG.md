@@ -18,3 +18,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Production pixel-art Office characters for all statuses with local provenance, deterministic visual baselines, and enforced asset budgets.
 - Privacy-minimized Codex 0.138.0 App Server snapshot polling with authoritative empty and degraded-state handling.
 - Deterministic bundle/package budgets and isolated VS Code profile lifecycle validation.
+- State-database-only Codex session discovery with workspace scoping, shell-free executable resolution, and conservative cross-process status labels.

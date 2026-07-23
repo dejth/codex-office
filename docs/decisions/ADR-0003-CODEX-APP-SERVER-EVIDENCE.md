@@ -51,9 +51,19 @@ At build/test time, schema generation is the reproducible compatibility check. A
 
 ### v0.1 capability mode
 
-The first implemented adapter mode is partial `snapshot-polling` for exactly Codex App Server 0.138.0. It requires the `initialize`, `thread/loaded/list`, and `thread/read` request schemas. `thread/list` is not required because it can scan stored rollout metadata.
+The first implemented adapter mode is partial `snapshot-polling` for exactly
+Codex App Server 0.138.0. It requires the `initialize` and `thread/list`
+request schemas. Discovery always sends `useStateDbOnly: true`, which prevents
+the list operation from scanning JSONL rollouts to repair metadata.
 
-The verified notification schemas are recorded separately, but their presence does not prove delivery or an active subscription. Polling `thread/read` does not expose cumulative token usage. The App Server has no standalone `thread/subscribe` request; attaching with `thread/resume` can reconstruct turns, while the data-minimizing `excludeTurns` option is experimental. Therefore v0.1 capability negotiation keeps experimental API disabled and reports only partial capability: `hierarchyPolling: true`, `usage: false`, and `liveUpdates: false`.
+The verified notification schemas are recorded separately, but their presence
+does not prove delivery or an active subscription. State-database listing does
+not expose cumulative token usage. The App Server has no standalone
+`thread/subscribe` request; attaching with `thread/resume` can reconstruct
+turns, while the data-minimizing `excludeTurns` option is experimental.
+Therefore v0.1 capability negotiation keeps experimental API disabled and
+reports only partial capability: `hierarchyPolling: true`, `usage: false`, and
+`liveUpdates: false`.
 
 Enabling usage or live attachment requires a separate accepted protocol/privacy decision and tests proving that session content is not unnecessarily ingested. Neither may be enabled as an implicit fallback.
 
@@ -66,7 +76,9 @@ Enabling usage or live attachment requires a separate accepted protocol/privacy 
 - Reject malformed or incompatible events at the provider boundary.
 - Preserve the last safe timestamped snapshot and expose `degraded` or `disconnected` state.
 - Never fall back to scanning real rollout content silently.
-- Prefer loaded-thread discovery. If `thread/list` is required, request `useStateDbOnly: true` and discard `cwd`, `preview`, `path`, Git metadata, and turns immediately at the provider boundary.
+- Use `thread/list` only with `useStateDbOnly: true`; discard `cwd`, `preview`,
+  `name`, `path`, Git metadata, turns, and other raw fields immediately at the
+  provider boundary.
 - Keep diagnostics local, content-free, and limited to protocol version, method, field, and validation error.
 
 ## Consequences and open questions

@@ -27,7 +27,7 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 ## Capability gate
 
 - Support is an exact allowlist for `0.138.0`; every other version degrades until its generated schema and contract suite pass.
-- The implemented mode is partial `snapshot-polling` using `initialize`, `thread/loaded/list`, and `thread/read`.
+- The implemented mode is partial `snapshot-polling` using `initialize` and `thread/list` with `useStateDbOnly: true`.
 - Required notification names are pinned schema evidence, not proof of observation or subscription.
 - The capability result reports `hierarchyPolling: true`, `usage: false`, and `liveUpdates: false`; it never describes the overall adapter as fully supported.
 - Experimental API remains disabled. A privacy-reviewed usage/live attachment contract is required before those capabilities can be enabled.
@@ -40,13 +40,22 @@ Provider failure never crashes VS Code. UI shows disconnected/degraded, preserve
 ## v0.1 integration boundary
 
 The extension owns a local `codex app-server --stdio` child process. It
-initializes without experimental APIs, polls `thread/loaded/list`, and reads
-each loaded thread with `includeTurns: false`. Strict boundary schemas retain
-only hierarchy identity, timestamp, and status; previews, turns, paths, Git
-metadata, and raw provider payloads are discarded.
+initializes without experimental APIs and polls persisted metadata through
+`thread/list` with `useStateDbOnly: true`, using an exact workspace-directory
+filter when VS Code has an open workspace. Discovery explicitly includes CLI,
+VS Code, exec, App Server, and every documented subagent source kind; relying
+on the upstream default would silently exclude subagents. Strict boundary
+schemas retain only hierarchy identity, timestamp, and status; previews, names,
+turns, paths, Git metadata, and raw provider payloads are discarded.
 
-This process can observe only threads loaded in that same App Server process.
-It cannot attach to separate Codex stdio processes. Cross-process attachment,
-rollout scanning, and content-bearing resume remain out of scope without an
-accepted privacy ADR. An empty loaded-thread list is therefore authoritative,
-not an error.
+Persisted sessions owned by another process are reported as `notLoaded` and map
+to the conservative `unknown` state. The extension cannot attach to a separate
+Codex stdio process, so it never presents those states as live. Cross-process
+attachment, private IPC, rollout scanning, and content-bearing resume remain
+out of scope without an accepted privacy ADR. An empty state-database result is
+authoritative, not an error.
+
+The transport resolves the executable without a shell from the extension-host
+PATH and bounded platform installation locations, including the macOS ChatGPT
+application bundle. Resolution and transport failures expose only bounded
+content-free codes; executable paths are never projected or logged.

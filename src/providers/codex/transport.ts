@@ -1,9 +1,19 @@
 import { spawn, type ChildProcess } from "node:child_process";
+import { accessSync, constants } from "node:fs";
+import { homedir } from "node:os";
+import { delimiter, join } from "node:path";
 
 const MAX_LINE_BYTES = 1_048_576;
 
 export class CodexTransportError extends Error {
-  constructor() {
+  constructor(
+    readonly code:
+      | "executable-not-found"
+      | "spawn-failed"
+      | "invalid-stdio"
+      | "protocol-failed"
+      | "timeout" = "protocol-failed",
+  ) {
     super("Codex App Server transport failed");
     this.name = "CodexTransportError";
   }
@@ -57,15 +67,22 @@ export class CodexStdioTransport implements CodexRpcTransport {
   private buffer = "";
 
   constructor(options: CodexStdioTransportOptions = {}) {
-    const command = options.command ?? "codex";
     this.requestTimeoutMs = options.requestTimeoutMs ?? 10_000;
-    this.spawnProcess =
-      options.spawnProcess ??
-      (() =>
-        spawn(command, ["app-server", "--stdio"], {
+    if (options.spawnProcess !== undefined) {
+      this.spawnProcess = options.spawnProcess;
+    } else {
+      this.spawnProcess = () => {
+        const command =
+          options.command ?? resolveCodexExecutable(process.env.PATH);
+        if (command === null) {
+          throw new CodexTransportError("executable-not-found");
+        }
+        return spawn(command, ["app-server", "--stdio"], {
           shell: false,
           stdio: ["pipe", "pipe", "ignore"],
-        }) as ChildProcess);
+        }) as ChildProcess;
+      };
+    }
   }
 
   start(): void {
@@ -73,11 +90,11 @@ export class CodexStdioTransport implements CodexRpcTransport {
     const process = this.spawnProcess();
     if (process.stdin === null || process.stdout === null) {
       process.kill();
-      throw new CodexTransportError();
+      throw new CodexTransportError("invalid-stdio");
     }
     this.process = process;
     process.stdout.on("data", (chunk) => this.acceptChunk(chunk));
-    process.once("error", () => this.fail());
+    process.once("error", () => this.fail("spawn-failed"));
     process.once("exit", () => this.fail());
   }
 
@@ -91,7 +108,7 @@ export class CodexStdioTransport implements CodexRpcTransport {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new CodexTransportError());
+        reject(new CodexTransportError("timeout"));
       }, this.requestTimeoutMs);
       this.pending.set(id, { resolve, reject, timer });
       try {
@@ -167,19 +184,63 @@ export class CodexStdioTransport implements CodexRpcTransport {
     }
   }
 
-  private fail(): void {
+  private fail(code: CodexTransportError["code"] = "protocol-failed"): void {
     const process = this.process;
     this.process = undefined;
     this.buffer = "";
-    this.rejectPending();
+    this.rejectPending(code);
     process?.kill();
   }
 
-  private rejectPending(): void {
+  private rejectPending(
+    code: CodexTransportError["code"] = "protocol-failed",
+  ): void {
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer);
-      pending.reject(new CodexTransportError());
+      pending.reject(new CodexTransportError(code));
     }
     this.pending.clear();
   }
+}
+
+/**
+ * Finds Codex without a shell. The returned path is used locally and is never
+ * included in provider diagnostics or snapshots.
+ */
+export function resolveCodexExecutable(
+  pathValue: string | undefined,
+  userHome: string = homedir(),
+): string | null {
+  for (const candidate of codexExecutableCandidates(pathValue, userHome)) {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return candidate;
+    } catch {
+      // Missing or non-executable candidates are expected.
+    }
+  }
+  return null;
+}
+
+export function codexExecutableCandidates(
+  pathValue: string | undefined,
+  userHome: string,
+  platform: NodeJS.Platform = process.platform,
+): string[] {
+  const names = platform === "win32" ? ["codex.exe", "codex"] : ["codex"];
+  return [
+    ...(pathValue ?? "")
+      .split(delimiter)
+      .filter((entry) => entry.length > 0)
+      .flatMap((entry) => names.map((name) => join(entry, name))),
+    ...names.flatMap((name) => [
+      join(userHome, ".local", "bin", name),
+      join(userHome, ".cargo", "bin", name),
+      join(userHome, ".bun", "bin", name),
+      join("/Applications/ChatGPT.app/Contents/Resources", name),
+      join("/Applications/Codex.app/Contents/Resources", name),
+      join("/opt/homebrew/bin", name),
+      join("/usr/local/bin", name),
+    ]),
+  ];
 }

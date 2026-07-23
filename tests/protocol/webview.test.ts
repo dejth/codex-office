@@ -41,11 +41,25 @@ describe("webview protocol", () => {
     {
       protocolVersion: V,
       sequence: 3,
+      type: "connection",
+      state: "degraded",
+      reason: "provider-executable-unavailable",
+    },
+    {
+      protocolVersion: V,
+      sequence: 4,
+      type: "connection",
+      state: "degraded",
+      reason: "provider-transport-unavailable",
+    },
+    {
+      protocolVersion: V,
+      sequence: 5,
       type: "settings",
       defaultView: "office",
       reducedMotion: true,
     },
-    { protocolVersion: V, sequence: 4, type: "refresh-requested" },
+    { protocolVersion: V, sequence: 6, type: "refresh-requested" },
   ])("accepts every host message type", (message) => {
     expect(parseHostToWebviewMessage(message)).toEqual({ ok: true, message });
   });

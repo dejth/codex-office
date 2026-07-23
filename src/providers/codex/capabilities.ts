@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-export const REQUIRED_REQUEST_METHODS = [
-  "initialize",
-  "thread/loaded/list",
-  "thread/read",
-] as const;
+export const REQUIRED_REQUEST_METHODS = ["initialize", "thread/list"] as const;
 
 export const REQUIRED_NOTIFICATION_METHODS = [
   "thread/started",
