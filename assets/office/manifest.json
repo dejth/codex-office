@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-23",
+  "grid": { "width": 128, "height": 128 },
+  "budgetBytes": { "perAsset": 20000, "total": 160000 },
+  "assets": {
+    "thinking": {
+      "file": "status/thinking.png",
+      "bytes": 12217,
+      "sha256": "d7d41e0ab55aa20b84fa13431bd19bd2956bff3c250d672248757b14ffdd5ea0"
+    },
+    "reading": {
+      "file": "status/reading.png",
+      "bytes": 11635,
+      "sha256": "46f64607143acad40eede8931b10b0ae8bcbb5bb980a3fdcb2f7bcebdb4722f6"
+    },
+    "editing": {
+      "file": "status/editing.png",
+      "bytes": 13845,
+      "sha256": "74d1b444317eab0c4d21d63bd2e50f47f4fd4cc5649764539cad547c509f86d7"
+    },
+    "running-command": {
+      "file": "status/running-command.png",
+      "bytes": 14129,
+      "sha256": "62be3f623eb07039cdceaca8be9c86eb686a00063f1c7a143a9926a306f6bc6b"
+    },
+    "waiting-approval": {
+      "file": "status/waiting-approval.png",
+      "bytes": 9861,
+      "sha256": "d5cda77a14de6a17d6bd143b72525f3da8c0fbfe28553835d09855807824204a"
+    },
+    "completed": {
+      "file": "status/completed.png",
+      "bytes": 10284,
+      "sha256": "26c4551f65bbeadc9d462af77b02ab25924c3db2a010d961c7e06e8833396be6"
+    },
+    "failed": {
+      "file": "status/failed.png",
+      "bytes": 12385,
+      "sha256": "1ab225f51596333a99e9b81fc01aada5c4650de50c6a8129f5817688fd24926e"
+    },
+    "idle": {
+      "file": "status/idle.png",
+      "bytes": 15281,
+      "sha256": "8505f0b4f3e3640ad44d00ca7ecab51febe63358705345ed4ba8b043bed80908"
+    },
+    "unknown": {
+      "file": "status/unknown.png",
+      "bytes": 11604,
+      "sha256": "74ac468cbd87927c911f785eb587e399f02d0b32651165a105b48cd1080e9fe7"
+    }
+  }
+}

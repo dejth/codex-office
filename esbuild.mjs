@@ -18,6 +18,8 @@ const builds = [
     platform: "browser",
     format: "iife",
     minify: true,
+    loader: { ".png": "file" },
+    assetNames: "assets/[name]-[hash]",
     define: { "process.env.NODE_ENV": '"production"' },
   },
 ];
