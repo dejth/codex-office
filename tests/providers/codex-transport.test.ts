@@ -65,6 +65,23 @@ describe("CodexStdioTransport", () => {
     );
   });
 
+  it("prefers user-local candidates over an inherited GUI PATH", () => {
+    const candidates = codexExecutableCandidates(
+      "/Applications/ChatGPT.app/Contents/Resources:/synthetic/bin",
+      "/synthetic/home",
+      "darwin",
+    );
+
+    expect(candidates.slice(0, 3)).toEqual([
+      "/synthetic/home/.local/bin/codex",
+      "/synthetic/home/.cargo/bin/codex",
+      "/synthetic/home/.bun/bin/codex",
+    ]);
+    expect(candidates.indexOf("/synthetic/home/.local/bin/codex")).toBeLessThan(
+      candidates.indexOf("/Applications/ChatGPT.app/Contents/Resources/codex"),
+    );
+  });
+
   it("correlates split JSONL responses and sends content-free notifications", async () => {
     const child = fakeProcess();
     const transport = new CodexStdioTransport({
