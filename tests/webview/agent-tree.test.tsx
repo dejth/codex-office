@@ -22,7 +22,7 @@ describe("accessible agent tree", () => {
     expect(html).toContain('role="tree"');
     expect(html).toContain('role="group"');
     expect(html.match(/role="treeitem"/g)).toHaveLength(4);
-    expect(html).toContain("Agent 4, Completed, Usage unavailable");
+    expect(html).toContain("Agent 4, Completed, Reported usage 260 tokens");
     expect(html).toContain('aria-level="3"');
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain("Waiting for approval");

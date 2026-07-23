@@ -1,6 +1,6 @@
 # CDD-005 — Usage Accounting Contract
 
-Status: Draft
+Status: Verified for v0.1 Meter model
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 
@@ -24,3 +24,11 @@ Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md
 ## Acceptance matrix
 
 New cumulative event, same event repeated, out-of-order event, process restart, resume, child spawn with replayed context, missing cached field, counter reset, and conflicting total/components.
+
+## Meter presentation model
+
+- Meter rows preserve each sanitized thread's input, cached input, output, total, and provenance without coercing missing values to zero.
+- Meter does not combine cumulative values across visible threads because parent/child context may overlap. A cross-thread total remains unavailable unless exactly one thread contributes.
+- A component that would exceed `Number.MAX_SAFE_INTEGER` fails closed to unavailable without hiding other safe components.
+- Equal values, replay-like values, and parent/child context are neither deduplicated nor added without stable evidence. The UI labels the scope as visible thread snapshots and warns that context may overlap.
+- Meter copy says `Reported usage` and explicitly disclaims billing, quota, and cost accuracy.
