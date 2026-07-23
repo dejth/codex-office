@@ -6,13 +6,25 @@ import {
 } from "../../domain/hierarchy";
 import type { AgentStatus, OfficeSnapshot } from "../../domain/model";
 import { negotiateCodexCapabilities } from "./capabilities";
-import { CodexStdioTransport, type CodexRpcTransport } from "./transport";
+import {
+  CodexStdioTransport,
+  CodexTransportError,
+  type CodexRpcTransport,
+} from "./transport";
+
+export type ProviderDiagnostic =
+  | "none"
+  | "executable-unavailable"
+  | "transport-unavailable"
+  | "unsupported-version"
+  | "invalid-provider-data";
 
 export interface AgentProvider {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   snapshot(): Promise<OfficeSnapshot>;
   refresh(): Promise<OfficeSnapshot>;
+  diagnostic(): ProviderDiagnostic;
   subscribe(listener: (snapshot: OfficeSnapshot) => void): () => void;
 }
 
@@ -23,11 +35,13 @@ export class CodexProvider implements AgentProvider {
   private polling: Promise<OfficeSnapshot> | undefined;
   private current = emptySnapshot("disconnected");
   private generation = 0;
+  private currentDiagnostic: ProviderDiagnostic = "none";
 
   constructor(
     private readonly createTransport: () => CodexRpcTransport = () =>
       new CodexStdioTransport(),
     private readonly now: () => Date = () => new Date(),
+    private readonly workspaceCwd?: string,
   ) {}
 
   async connect(): Promise<void> {
@@ -54,6 +68,11 @@ export class CodexProvider implements AgentProvider {
       }
       const capability = negotiateCodexCapabilities(initialize);
       if (!capability.capabilities.hierarchyPolling) {
+        this.currentDiagnostic = capability.diagnostics.some(
+          ({ code }) => code === "unsupported-runtime-version",
+        )
+          ? "unsupported-version"
+          : "invalid-provider-data";
         this.setDegraded();
         transport.stop();
         this.transport = undefined;
@@ -61,12 +80,14 @@ export class CodexProvider implements AgentProvider {
       }
       transport.notify("initialized");
       this.connected = true;
+      this.currentDiagnostic = "none";
       await this.poll(generation);
-    } catch {
+    } catch (error) {
       transport.stop();
       if (generation === this.generation && transport === this.transport) {
         this.transport = undefined;
         this.connected = false;
+        this.currentDiagnostic = diagnosticFromError(error);
         this.setDegraded();
       }
     }
@@ -92,6 +113,10 @@ export class CodexProvider implements AgentProvider {
       : cloneSnapshot(this.current);
   }
 
+  diagnostic(): ProviderDiagnostic {
+    return this.currentDiagnostic;
+  }
+
   subscribe(listener: (snapshot: OfficeSnapshot) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -111,19 +136,7 @@ export class CodexProvider implements AgentProvider {
     if (!this.connected || transport === undefined)
       return cloneSnapshot(this.current);
     try {
-      const threadIds = await listLoadedThreadIds(transport);
-      const threads = await Promise.all(
-        threadIds.map(async (threadId) => {
-          const thread = parseThreadRead(
-            await transport.request("thread/read", {
-              threadId,
-              includeTurns: false,
-            }),
-          );
-          if (thread.id !== threadId) throw new Error("provider id mismatch");
-          return thread;
-        }),
-      );
+      const threads = await listPersistedThreads(transport, this.workspaceCwd);
       const hierarchy = buildAgentHierarchy(toHierarchyAgents(threads));
       if (
         generation !== this.generation ||
@@ -141,10 +154,19 @@ export class CodexProvider implements AgentProvider {
           hierarchy.unresolved.length === 0 ? "connected" : "degraded",
       };
       this.current = next;
+      this.currentDiagnostic = "none";
       this.emit(next);
       return cloneSnapshot(next);
-    } catch {
-      if (generation === this.generation) this.setDegraded();
+    } catch (error) {
+      if (generation === this.generation) {
+        this.currentDiagnostic = diagnosticFromError(error);
+        if (this.currentDiagnostic === "transport-unavailable") {
+          transport.stop();
+          if (this.transport === transport) this.transport = undefined;
+          this.connected = false;
+        }
+        this.setDegraded();
+      }
       return cloneSnapshot(this.current);
     }
   }
@@ -161,12 +183,6 @@ export class CodexProvider implements AgentProvider {
 
 const id = z.string().min(1).max(512);
 const cursor = z.string().min(1).max(4096);
-const loadedListSchema = z
-  .object({
-    data: z.array(id).max(1_000),
-    nextCursor: cursor.nullable(),
-  })
-  .strip();
 const threadStatusSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("notLoaded") }).strip(),
   z.object({ type: z.literal("idle") }).strip(),
@@ -180,52 +196,76 @@ const threadStatusSchema = z.discriminatedUnion("type", [
     })
     .strip(),
 ]);
-const threadReadSchema = z
+const threadListItemSchema = z
   .object({
-    thread: z
-      .object({
-        id,
-        sessionId: id,
-        parentThreadId: id.nullable(),
-        createdAt: z.number().int().nonnegative().safe(),
-        status: threadStatusSchema,
-      })
-      .strip(),
+    id,
+    sessionId: id,
+    parentThreadId: id.nullable().optional().default(null),
+    createdAt: z.number().int().nonnegative().safe(),
+    status: threadStatusSchema,
   })
   .strip();
+const threadListSchema = z
+  .object({
+    data: z.array(threadListItemSchema).max(1_000),
+    nextCursor: cursor.nullable().optional().default(null),
+  })
+  .strip();
+type SafeThread = z.infer<typeof threadListItemSchema>;
+const DISCOVERY_SOURCE_KINDS = [
+  "cli",
+  "vscode",
+  "exec",
+  "appServer",
+  "subAgent",
+  "subAgentReview",
+  "subAgentCompact",
+  "subAgentThreadSpawn",
+  "subAgentOther",
+] as const;
 
-type SafeThread = z.infer<typeof threadReadSchema>["thread"];
-
-async function listLoadedThreadIds(
+async function listPersistedThreads(
   transport: CodexRpcTransport,
-): Promise<string[]> {
-  const ids = new Set<string>();
+  workspaceCwd?: string,
+): Promise<SafeThread[]> {
+  const threads = new Map<string, SafeThread>();
   const cursors = new Set<string>();
   let nextCursor: string | null = null;
   for (let page = 0; page < 32; page += 1) {
-    const parsed = loadedListSchema.safeParse(
-      await transport.request("thread/loaded/list", {
+    const parsed = threadListSchema.safeParse(
+      await transport.request("thread/list", {
         cursor: nextCursor,
         limit: 100,
+        cwd: workspaceCwd ?? null,
+        sourceKinds: DISCOVERY_SOURCE_KINDS,
+        useStateDbOnly: true,
       }),
     );
     if (!parsed.success) throw new Error("invalid provider data");
-    for (const threadId of parsed.data.data) {
-      ids.add(threadId);
-      if (ids.size > 1_000) throw new Error("provider limit");
+    for (const thread of parsed.data.data) {
+      const existing = threads.get(thread.id);
+      if (existing !== undefined && !sameSafeThread(existing, thread)) {
+        throw new Error("conflicting provider data");
+      }
+      threads.set(thread.id, thread);
+      if (threads.size > 1_000) throw new Error("provider limit");
     }
     nextCursor = parsed.data.nextCursor;
-    if (nextCursor === null) return [...ids];
+    if (nextCursor === null) return [...threads.values()];
     if (cursors.has(nextCursor)) throw new Error("provider cursor cycle");
     cursors.add(nextCursor);
   }
   throw new Error("provider page limit");
 }
 
-function parseThreadRead(value: unknown): SafeThread {
-  const parsed = threadReadSchema.safeParse(value);
-  if (!parsed.success) throw new Error("invalid provider data");
-  return parsed.data.thread;
+function sameSafeThread(left: SafeThread, right: SafeThread): boolean {
+  return (
+    left.id === right.id &&
+    left.sessionId === right.sessionId &&
+    left.parentThreadId === right.parentThreadId &&
+    left.createdAt === right.createdAt &&
+    JSON.stringify(left.status) === JSON.stringify(right.status)
+  );
 }
 
 function toHierarchyAgents(threads: readonly SafeThread[]): HierarchyAgent[] {
@@ -289,4 +329,13 @@ function emptySnapshot(
 
 function cloneSnapshot(snapshot: OfficeSnapshot): OfficeSnapshot {
   return structuredClone(snapshot);
+}
+
+function diagnosticFromError(error: unknown): ProviderDiagnostic {
+  if (error instanceof CodexTransportError) {
+    return error.code === "executable-not-found"
+      ? "executable-unavailable"
+      : "transport-unavailable";
+  }
+  return "invalid-provider-data";
 }

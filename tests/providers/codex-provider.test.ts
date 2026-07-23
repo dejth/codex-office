@@ -1,13 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { CodexProvider } from "../../src/providers/codex/provider";
-import type { CodexRpcTransport } from "../../src/providers/codex/transport";
+import {
+  CodexTransportError,
+  type CodexRpcTransport,
+} from "../../src/providers/codex/transport";
 
 const INITIALIZE = {
   userAgent: "Codex Desktop/0.138.0 synthetic",
   codexHome: "/private/never-retain",
 };
 const NOW = new Date("2026-07-23T04:00:00.000Z");
+const DISCOVERY_SOURCES = [
+  "cli",
+  "vscode",
+  "exec",
+  "appServer",
+  "subAgent",
+  "subAgentReview",
+  "subAgentCompact",
+  "subAgentThreadSpawn",
+  "subAgentOther",
+];
 
 class FakeTransport implements CodexRpcTransport {
   readonly calls: Array<{ method: string; params?: unknown }> = [];
@@ -49,29 +63,26 @@ function thread(
   extras: Record<string, unknown> = {},
 ) {
   return {
-    thread: {
-      id,
-      sessionId: "session-synthetic",
-      parentThreadId,
-      createdAt: 1_753_243_200,
-      status,
-      preview: "must be discarded",
-      cwd: "/private/workspace",
-      turns: [{ prompt: "must be discarded" }],
-      ...extras,
-    },
+    id,
+    sessionId: "session-synthetic",
+    parentThreadId,
+    createdAt: 1_753_243_200,
+    status,
+    preview: "must be discarded",
+    cwd: "/private/workspace",
+    turns: [{ prompt: "must be discarded" }],
+    ...extras,
   };
 }
 
 function configuredTransport(...reads: unknown[]): FakeTransport {
   return new FakeTransport()
     .queue("initialize", INITIALIZE)
-    .queue("thread/loaded/list", {
-      data: reads.map((read) => (read as { thread: { id: string } }).thread.id),
+    .queue("thread/list", {
+      data: reads,
       nextCursor: null,
       path: "/private/list",
-    })
-    .queue("thread/read", ...reads);
+    });
 }
 
 describe("CodexProvider", () => {
@@ -101,7 +112,7 @@ describe("CodexProvider", () => {
     expect(first.stopped).toBeGreaterThan(0);
   });
 
-  it("initializes without experimental APIs and reads only content-minimized snapshots", async () => {
+  it("discovers state-db threads without experimental APIs and strips content", async () => {
     const transport = configuredTransport(
       thread("thread-root", null, { type: "active", activeFlags: [] }),
       thread("thread-child", "thread-root", {
@@ -131,18 +142,19 @@ describe("CodexProvider", () => {
       },
     });
     expect(transport.calls).toContainEqual({ method: "initialized" });
-    expect(
-      transport.calls.filter(({ method }) => method === "thread/read"),
-    ).toEqual([
-      {
-        method: "thread/read",
-        params: { threadId: "thread-root", includeTurns: false },
+    expect(transport.calls).toContainEqual({
+      method: "thread/list",
+      params: {
+        cursor: null,
+        limit: 100,
+        cwd: null,
+        sourceKinds: DISCOVERY_SOURCES,
+        useStateDbOnly: true,
       },
-      {
-        method: "thread/read",
-        params: { threadId: "thread-child", includeTurns: false },
-      },
-    ]);
+    });
+    expect(transport.calls.some(({ method }) => method === "thread/read")).toBe(
+      false,
+    );
     expect(snapshot.connection).toBe("connected");
     expect(snapshot.agents[0]?.status).toBe("thinking");
     expect(snapshot.agents[0]?.children[0]?.status).toBe("waiting-approval");
@@ -182,31 +194,43 @@ describe("CodexProvider", () => {
     });
   });
 
-  it("paginates loaded ids and rejects cursor cycles", async () => {
+  it("paginates persisted threads with the exact workspace filter", async () => {
     const transport = new FakeTransport()
       .queue("initialize", INITIALIZE)
       .queue(
-        "thread/loaded/list",
-        { data: ["root"], nextCursor: "next" },
-        { data: ["child"], nextCursor: null },
-      )
-      .queue("thread/read", thread("root", null), thread("child", "root"));
+        "thread/list",
+        { data: [thread("root", null)], nextCursor: "next" },
+        { data: [thread("child", "root")], nextCursor: null },
+      );
     const provider = new CodexProvider(
       () => transport,
       () => NOW,
+      "/synthetic/workspace",
     );
     await provider.connect();
     expect((await provider.snapshot()).agents[0]?.children).toHaveLength(1);
     expect(
-      transport.calls.filter(({ method }) => method === "thread/loaded/list"),
+      transport.calls.filter(({ method }) => method === "thread/list"),
     ).toEqual([
       {
-        method: "thread/loaded/list",
-        params: { cursor: null, limit: 100 },
+        method: "thread/list",
+        params: {
+          cursor: null,
+          limit: 100,
+          cwd: "/synthetic/workspace",
+          sourceKinds: DISCOVERY_SOURCES,
+          useStateDbOnly: true,
+        },
       },
       {
-        method: "thread/loaded/list",
-        params: { cursor: "next", limit: 100 },
+        method: "thread/list",
+        params: {
+          cursor: "next",
+          limit: 100,
+          cwd: "/synthetic/workspace",
+          sourceKinds: DISCOVERY_SOURCES,
+          useStateDbOnly: true,
+        },
       },
     ]);
   });
@@ -244,6 +268,7 @@ describe("CodexProvider", () => {
     const snapshot = await provider.snapshot();
 
     expect(snapshot.connection).toBe("degraded");
+    expect(provider.diagnostic()).toBe("unsupported-version");
     expect(transport.stopped).toBe(1);
     expect(
       transport.calls.some(({ method }) => method.startsWith("thread/")),
@@ -259,26 +284,62 @@ describe("CodexProvider", () => {
     await provider.connect();
     const safe = await provider.snapshot();
 
-    transport.queue("thread/loaded/list", {
-      data: ["unsafe"],
+    transport.queue("thread/list", {
+      data: [
+        {
+          id: "unsafe",
+          sessionId: "session",
+          parentThreadId: null,
+          createdAt: 1,
+          status: { type: "futureStatus" },
+          secret: "never expose",
+        },
+      ],
       nextCursor: null,
-    });
-    transport.queue("thread/read", {
-      thread: {
-        id: "unsafe",
-        sessionId: "session",
-        parentThreadId: null,
-        createdAt: 1,
-        status: { type: "futureStatus" },
-        secret: "never expose",
-      },
     });
     const degraded = await provider.refresh();
 
     expect(degraded.agents).toEqual(safe.agents);
     expect(degraded.updatedAt).toBe(safe.updatedAt);
     expect(degraded.connection).toBe("degraded");
+    expect(provider.diagnostic()).toBe("invalid-provider-data");
     expect(JSON.stringify(degraded)).not.toContain("never expose");
+  });
+
+  it("preserves a bounded executable-unavailable diagnostic", async () => {
+    const transport = new FakeTransport();
+    transport.start = () => {
+      throw new CodexTransportError("executable-not-found");
+    };
+    const provider = new CodexProvider(() => transport);
+
+    await provider.connect();
+
+    expect((await provider.snapshot()).connection).toBe("degraded");
+    expect(provider.diagnostic()).toBe("executable-unavailable");
+    expect(JSON.stringify(provider.diagnostic())).not.toContain("/");
+  });
+
+  it("reconnects after a runtime transport failure", async () => {
+    const first = configuredTransport(thread("first", null));
+    const second = configuredTransport(thread("second", null));
+    const transports = [first, second];
+    const provider = new CodexProvider(
+      () => transports.shift()!,
+      () => NOW,
+    );
+    await provider.connect();
+    first.queue("thread/list", new CodexTransportError("protocol-failed"));
+
+    expect((await provider.refresh()).connection).toBe("degraded");
+    expect(provider.diagnostic()).toBe("transport-unavailable");
+    expect(first.stopped).toBeGreaterThan(0);
+
+    await provider.connect();
+    const recovered = await provider.snapshot();
+    expect(recovered.connection).toBe("connected");
+    expect(recovered.agents[0]?.id).toBe("second");
+    expect(provider.diagnostic()).toBe("none");
   });
 
   it("degrades rather than linking relationships across sessions", async () => {
@@ -298,14 +359,24 @@ describe("CodexProvider", () => {
     expect(snapshot.agents[0]?.children).toEqual([]);
   });
 
-  it("rejects a thread/read response whose id differs from the request", async () => {
-    const transport = new FakeTransport()
-      .queue("initialize", INITIALIZE)
-      .queue("thread/loaded/list", {
-        data: ["expected"],
+  it("rejects conflicting duplicate thread ids across pages", async () => {
+    const transport = new FakeTransport().queue("initialize", INITIALIZE).queue(
+      "thread/list",
+      { data: [thread("duplicate", null)], nextCursor: "next" },
+      {
+        data: [
+          thread(
+            "duplicate",
+            null,
+            { type: "idle" },
+            {
+              sessionId: "conflicting-session",
+            },
+          ),
+        ],
         nextCursor: null,
-      })
-      .queue("thread/read", thread("unexpected", null));
+      },
+    );
     const provider = new CodexProvider(
       () => transport,
       () => NOW,
@@ -323,7 +394,7 @@ describe("CodexProvider", () => {
     });
     const transport = new FakeTransport()
       .queue("initialize", INITIALIZE)
-      .queue("thread/loaded/list", pendingList);
+      .queue("thread/list", pendingList);
     const provider = new CodexProvider(
       () => transport,
       () => NOW,
@@ -334,7 +405,7 @@ describe("CodexProvider", () => {
     await Promise.all([connecting, refresh]);
 
     expect(
-      transport.calls.filter(({ method }) => method === "thread/loaded/list"),
+      transport.calls.filter(({ method }) => method === "thread/list"),
     ).toHaveLength(1);
     await provider.disconnect();
     await provider.disconnect();

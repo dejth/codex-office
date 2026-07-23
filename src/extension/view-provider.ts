@@ -9,6 +9,7 @@ import {
   type HostToWebviewMessage,
 } from "../protocol/webview";
 import { CodexProvider, type AgentProvider } from "../providers/codex/provider";
+import type { ProviderDiagnostic } from "../providers/codex/provider";
 
 export class CodexOfficeViewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
@@ -18,6 +19,7 @@ export class CodexOfficeViewProvider
   private configurationSubscription?: vscode.Disposable;
   private providerSubscription?: () => void;
   private refreshPromise?: Promise<void>;
+  private pollingTimer?: NodeJS.Timeout;
   private sequence = 0;
   private generation = 0;
 
@@ -40,6 +42,7 @@ export class CodexOfficeViewProvider
           case "ready":
             this.sendInitialState();
             void this.refreshProvider(false);
+            this.startPolling();
             break;
           case "refresh":
             this.refresh();
@@ -71,6 +74,7 @@ export class CodexOfficeViewProvider
         this.providerSubscription?.();
         this.providerSubscription = undefined;
         this.refreshPromise = undefined;
+        this.stopPolling();
         void this.provider.disconnect();
         this.messageSubscription = undefined;
         this.configurationSubscription = undefined;
@@ -111,6 +115,7 @@ export class CodexOfficeViewProvider
     this.providerSubscription?.();
     this.providerSubscription = undefined;
     this.refreshPromise = undefined;
+    this.stopPolling();
     this.messageSubscription?.dispose();
     this.configurationSubscription?.dispose();
     this.view = undefined;
@@ -119,6 +124,19 @@ export class CodexOfficeViewProvider
 
   private sendInitialState(): void {
     this.sendSettings();
+  }
+
+  private startPolling(): void {
+    if (this.pollingTimer !== undefined) return;
+    this.pollingTimer = setInterval(() => {
+      if (this.view?.visible === true) void this.refreshProvider(true);
+    }, 2_000);
+  }
+
+  private stopPolling(): void {
+    if (this.pollingTimer === undefined) return;
+    clearInterval(this.pollingTimer);
+    this.pollingTimer = undefined;
   }
 
   private refreshProvider(force: boolean): Promise<void> {
@@ -161,7 +179,7 @@ export class CodexOfficeViewProvider
       snapshot.connection === "connected"
         ? null
         : snapshot.connection === "degraded"
-          ? "invalid-provider-data"
+          ? providerReason(this.provider.diagnostic())
           : "provider-unavailable",
     );
     this.post({
@@ -176,6 +194,9 @@ export class CodexOfficeViewProvider
     state: "connected" | "disconnected" | "degraded",
     reason:
       | "provider-unavailable"
+      | "provider-executable-unavailable"
+      | "provider-transport-unavailable"
+      | "unsupported-version"
       | "invalid-provider-data"
       | "usage-unavailable"
       | null,
@@ -218,5 +239,25 @@ export class CodexOfficeViewProvider
     }
     this.sequence = Math.min(this.sequence + 1, Number.MAX_SAFE_INTEGER);
     return this.sequence;
+  }
+}
+
+function providerReason(
+  diagnostic: ProviderDiagnostic,
+):
+  | "provider-executable-unavailable"
+  | "provider-transport-unavailable"
+  | "unsupported-version"
+  | "invalid-provider-data" {
+  switch (diagnostic) {
+    case "executable-unavailable":
+      return "provider-executable-unavailable";
+    case "transport-unavailable":
+      return "provider-transport-unavailable";
+    case "unsupported-version":
+      return "unsupported-version";
+    case "none":
+    case "invalid-provider-data":
+      return "invalid-provider-data";
   }
 }
