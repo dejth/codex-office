@@ -29,6 +29,13 @@ button {
   padding: 5px 8px;
   border-radius: 4px;
 }
+.connection-notice {
+  padding: 8px 10px;
+  margin: 10px 0 14px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-notifications-background);
+  border-left: 3px solid var(--vscode-notificationsWarningIcon-foreground);
+}
 .office-view {
   margin-top: 24px;
 }

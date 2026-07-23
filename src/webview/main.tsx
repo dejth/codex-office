@@ -8,12 +8,12 @@ import {
   type WebviewSnapshot,
   type WebviewToHostMessage,
 } from "../protocol/webview";
-import { previewSnapshot } from "../protocol/preview-fixture";
 import "./styles.css";
 import { AgentTree } from "./agent-tree";
+import { ConnectionNotice } from "./connection-notice";
 import { OfficeView } from "./office-view";
 import { MeterView } from "./meter-view";
-import { replaceSnapshot } from "./state";
+import { replaceConnection, replaceSnapshot } from "./state";
 
 type ViewMode = "office" | "meter";
 
@@ -22,11 +22,20 @@ declare function acquireVsCodeApi(): {
 };
 
 const vscode = acquireVsCodeApi();
+const INITIAL_SNAPSHOT: WebviewSnapshot = {
+  id: "snapshot_initial",
+  updatedAt: "1970-01-01T00:00:00.000Z",
+  agents: [],
+  unresolved: [],
+  connection: "disconnected",
+};
 
 function App(): React.JSX.Element {
   const [mode, setMode] = useState<ViewMode>("office");
   const [announcement, setAnnouncement] = useState("");
-  const [snapshot, setSnapshot] = useState<WebviewSnapshot>(previewSnapshot);
+  const [snapshot, setSnapshot] = useState<WebviewSnapshot>(INITIAL_SNAPSHOT);
+  const [connection, setConnection] =
+    useState<WebviewSnapshot["connection"]>("disconnected");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const lastSequenceByType = useRef(new Map<string, number>());
@@ -50,6 +59,10 @@ function App(): React.JSX.Element {
       } else if (parsed.message.type === "snapshot") {
         const nextSnapshot = parsed.message.snapshot;
         setSnapshot((current) => replaceSnapshot(current, nextSnapshot));
+        setConnection(nextSnapshot.connection);
+      } else if (parsed.message.type === "connection") {
+        const nextConnection = parsed.message.state;
+        setConnection((current) => replaceConnection(current, nextConnection));
       } else if (parsed.message.type === "refresh-requested") {
         setAnnouncement(`Refreshing Codex Office ${parsed.message.sequence}`);
       }
@@ -100,6 +113,7 @@ function App(): React.JSX.Element {
           </button>
         </nav>
       </header>
+      <ConnectionNotice state={connection} />
       {mode === "office" ? (
         <>
           <OfficeView

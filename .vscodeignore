@@ -4,6 +4,7 @@ coverage/**
 docs/**
 node_modules/**
 src/**
+scripts/**
 tasks/**
 tests/**
 assets/office/source/**

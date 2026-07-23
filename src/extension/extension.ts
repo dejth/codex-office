@@ -4,6 +4,7 @@ import { CodexOfficeViewProvider } from "./view-provider";
 export function activate(context: vscode.ExtensionContext): void {
   const provider = new CodexOfficeViewProvider(context.extensionUri);
   context.subscriptions.push(
+    provider,
     vscode.window.registerWebviewViewProvider("codexOffice.sidebar", provider),
     vscode.commands.registerCommand("codexOffice.refresh", () =>
       provider.refresh(),
