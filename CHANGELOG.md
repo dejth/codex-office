@@ -25,3 +25,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Verified capability parsing for the `codex-office/0.138.0` Extension Host fingerprint without weakening the exact runtime allowlist.
 - Workspace-required discovery and an isolated Extension Host profile that prevent global persisted-session flooding and unrelated extension noise during preview.
 - Local two-frame pixel-art action sprites for every Office status, with deterministic frame stepping and static reduced-motion fallbacks.
+- Five-frame Office animations with a dedicated blink frame, plus a monochrome mascot-head Activity Bar icon.

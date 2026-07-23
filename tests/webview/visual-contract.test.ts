@@ -28,9 +28,10 @@ describe("Office and Meter visual contract", () => {
     expect(css).not.toMatch(/https?:\/\//);
   });
 
-  it("uses frame-based sprite motion rather than whole-image transforms", () => {
-    expect(css).toContain("@keyframes office-sprite-two");
-    expect(css).toContain("background-size: 200% 100%");
+  it("uses five-frame sprite motion rather than whole-image transforms", () => {
+    expect(css).toContain("@keyframes office-sprite-five");
+    expect(css).toContain("background-size: 500% 100%");
+    expect(css).toContain("background-position: 50% center");
     expect(css).toContain("background-position: 100% center");
     expect(css).not.toContain("@keyframes office-breathe");
     expect(css).not.toContain("@keyframes office-type");

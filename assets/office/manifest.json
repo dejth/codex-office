@@ -2,8 +2,13 @@
   "version": 1,
   "generatedAt": "2026-07-23",
   "grid": { "width": 128, "height": 128 },
-  "animationGrid": { "frameWidth": 64, "frameHeight": 64, "frames": 2 },
-  "budgetBytes": { "perAsset": 20000, "total": 240000 },
+  "animationGrid": {
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 5,
+    "blinkFrame": 3
+  },
+  "budgetBytes": { "perAsset": 24000, "total": 280000 },
   "assets": {
     "thinking": {
       "file": "status/thinking.png",
@@ -54,48 +59,48 @@
   "animations": {
     "thinking": {
       "file": "animation/thinking.png",
-      "bytes": 6473,
-      "sha256": "c1aeef6bb6d287d644f04585a87c82ee5c43bc45734cddd94de9bd029e28cba6"
+      "bytes": 14307,
+      "sha256": "11ce962f48af7f7ba76d136e596a0c717a863f8071b2e42970a5d478b7792720"
     },
     "reading": {
       "file": "animation/reading.png",
-      "bytes": 7851,
-      "sha256": "033c67d907f9b7589c9e173e5e061516e9764798d2866b1d2673ec0830ae1e28"
+      "bytes": 17295,
+      "sha256": "79c4e2009bc8ad3ec91dcdfa73ae6937983d8d36fc08e8de304b1f87193baa18"
     },
     "editing": {
       "file": "animation/editing.png",
-      "bytes": 8237,
-      "sha256": "0fadc24167491d7c66c804cba8371380f4e5575f4230a87838b634501bff3eda"
+      "bytes": 18976,
+      "sha256": "ad6fd7a71291e6738a410d13bd0bd0a37417134b14e623a125b364d1c0df9ee9"
     },
     "running-command": {
       "file": "animation/running-command.png",
-      "bytes": 9333,
-      "sha256": "c7797d787f318f8a97dd04c374bf20c0c6f3b13fb77709055fa0ab2685fd0f35"
+      "bytes": 19382,
+      "sha256": "182e6d8397c2fd6555f8f371e4110a4c9b983f651c7b87935e926cbc118e1cc0"
     },
     "waiting-approval": {
       "file": "animation/waiting-approval.png",
-      "bytes": 5862,
-      "sha256": "7e3fe9bf1fc5b9fe73f7a7b8e162452d7fd858339ca5c3e2700336616a78a9ca"
+      "bytes": 9005,
+      "sha256": "54f98264e0bb56ee5862eb91dc4373f4d633a5e7b944444a53d304e39084254d"
     },
     "completed": {
       "file": "animation/completed.png",
-      "bytes": 6457,
-      "sha256": "10fda1c9ecc165fcc9582808995161bb8e7628055640eb5ed61b79f4181741b5"
+      "bytes": 14506,
+      "sha256": "2fc5cbcb576f2c54398a279d5d59ec28058ac434da6e2627ac0d4bf6d25b5e96"
     },
     "failed": {
       "file": "animation/failed.png",
-      "bytes": 7894,
-      "sha256": "50da82df93e09b4235ec05e800046c5d77b77c804885a80640e8aee78da106c7"
+      "bytes": 15136,
+      "sha256": "58c77ba283567041f169d02878ce825e3b20ab49663a7a22e0c4260975ea30e9"
     },
     "idle": {
       "file": "animation/idle.png",
-      "bytes": 9993,
-      "sha256": "bef086cf416d9ade1b691a42edc5fe116d51fca336e7e8f8716380dd2e6869be"
+      "bytes": 21843,
+      "sha256": "3810204cc95d3f47550da84ca0cf11f7366493a38ae16237bc3f9274aeff6fbe"
     },
     "unknown": {
       "file": "animation/unknown.png",
-      "bytes": 7806,
-      "sha256": "a7e54436cbe892b0bb4160520480c4ab1a338b62c20c33feb9b0f38b12acd4c6"
+      "bytes": 15967,
+      "sha256": "ff35f9f759fb83a52b8f918d6ebb1ec86bad4a265ff6a7444560128fc6ec7b69"
     }
   }
 }
