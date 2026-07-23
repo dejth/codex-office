@@ -162,97 +162,64 @@ button {
 }
 .station-scene {
   position: relative;
-  display: block;
-  min-height: 88px;
+  display: grid;
+  min-height: 112px;
+  place-items: center;
+  isolation: isolate;
 }
-.desk-prop {
+.station-scene::before {
   position: absolute;
-  right: 10%;
-  bottom: 14px;
-  width: 45%;
-  height: 42px;
-}
-.prop-screen {
-  position: absolute;
-  top: 0;
-  left: 18%;
-  width: 52%;
-  height: 24px;
+  right: 8%;
+  bottom: 8px;
+  left: 8%;
+  z-index: -1;
+  height: 34px;
+  content: "";
   background: color-mix(
     in srgb,
-    var(--vscode-editor-background) 72%,
-    var(--vscode-focusBorder)
+    var(--vscode-button-background) 12%,
+    transparent
   );
-  border: 2px solid var(--vscode-foreground);
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 2px var(--vscode-editor-background);
+  border: 1px solid
+    color-mix(in srgb, var(--vscode-focusBorder) 38%, transparent);
+  border-radius: 50%;
 }
-.prop-surface {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 7px;
-  background: var(--vscode-foreground);
-  border-radius: 2px;
-}
-.agent-figure {
-  position: absolute;
-  bottom: 17px;
-  left: 12%;
-  width: 42px;
-  height: 62px;
+.pixel-character {
+  display: block;
+  width: min(100%, 128px);
+  aspect-ratio: 1;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  image-rendering: pixelated;
   transform-origin: center bottom;
 }
-.agent-head {
-  position: absolute;
-  top: 9px;
-  left: 10px;
-  width: 22px;
-  height: 22px;
-  background: var(--vscode-editor-background);
-  border: 2px solid var(--vscode-foreground);
-  border-radius: 7px 7px 9px 9px;
+.pixel-character-thinking {
+  background-image: url("../../assets/office/status/thinking.png");
 }
-.agent-head::before {
-  position: absolute;
-  top: 8px;
-  left: 5px;
-  width: 3px;
-  height: 3px;
-  content: "";
-  background: var(--vscode-foreground);
-  border-radius: 50%;
-  box-shadow: 8px 0 var(--vscode-foreground);
+.pixel-character-reading {
+  background-image: url("../../assets/office/status/reading.png");
 }
-.agent-body {
-  position: absolute;
-  bottom: 0;
-  left: 5px;
-  width: 32px;
-  height: 32px;
-  background: var(--vscode-button-background);
-  border: 2px solid var(--vscode-foreground);
-  border-radius: 12px 12px 5px 5px;
+.pixel-character-editing {
+  background-image: url("../../assets/office/status/editing.png");
 }
-.agent-thought {
-  position: absolute;
-  top: -8px;
-  left: 28px;
-  z-index: 2;
-  display: none;
-  padding: 2px 5px;
-  color: var(--vscode-editor-background);
-  font-size: 8px;
-  background: var(--vscode-foreground);
-  border-radius: 8px;
+.pixel-character-running-command {
+  background-image: url("../../assets/office/status/running-command.png");
 }
-.station-spark {
-  position: absolute;
-  top: 16px;
-  right: 13px;
-  display: none;
-  color: var(--vscode-testing-iconPassed, var(--vscode-foreground));
+.pixel-character-waiting-approval {
+  background-image: url("../../assets/office/status/waiting-approval.png");
+}
+.pixel-character-completed {
+  background-image: url("../../assets/office/status/completed.png");
+}
+.pixel-character-failed {
+  background-image: url("../../assets/office/status/failed.png");
+}
+.pixel-character-idle {
+  background-image: url("../../assets/office/status/idle.png");
+}
+.pixel-character-unknown {
+  background-image: url("../../assets/office/status/unknown.png");
 }
 .station-caption {
   position: relative;
@@ -275,31 +242,24 @@ button {
   color: var(--vscode-descriptionForeground);
   font-size: 10px;
 }
-.office-station[data-motion="thought-breathe"] .agent-thought {
-  display: block;
-}
-.office-station[data-motion="success-settle"] .station-spark,
-.office-station[data-accent="success"] .station-spark {
-  display: block;
-}
 .office-station[data-accent="attention"] {
   border-left: 3px solid var(--vscode-notificationsWarningIcon-foreground);
 }
 .office-station[data-accent="danger"] {
   border-left: 3px solid var(--vscode-errorForeground);
 }
-.office-station[data-motion="thought-breathe"] .agent-figure,
-.office-station[data-motion="rest-breathe"] .agent-figure {
+.office-station[data-motion="thought-breathe"] .pixel-character,
+.office-station[data-motion="rest-breathe"] .pixel-character {
   animation: office-breathe 2.4s ease-in-out infinite;
 }
-.office-station[data-motion="typing-loop"] .agent-figure {
+.office-station[data-motion="typing-loop"] .pixel-character {
   animation: office-type 0.55s steps(2, end) infinite;
 }
-.office-station[data-motion="page-turn"] .agent-figure {
+.office-station[data-motion="page-turn"] .pixel-character {
   animation: office-read 1.8s ease-in-out infinite;
 }
-.office-station[data-motion="terminal-scan"] .prop-screen {
-  animation: office-screen 1.25s ease-in-out infinite;
+.office-station[data-motion="terminal-scan"] .pixel-character {
+  animation: office-screen 1.25s steps(2, end) infinite;
 }
 .office-station[data-motion="attention-breathe"] {
   animation: office-attention 1.6s ease-in-out infinite;
@@ -500,9 +460,8 @@ button {
 }
 @keyframes office-screen {
   50% {
-    box-shadow:
-      inset 0 0 0 2px var(--vscode-editor-background),
-      0 0 8px var(--vscode-focusBorder);
+    filter: brightness(1.08);
+    transform: translateY(-1px);
   }
 }
 @keyframes office-attention {

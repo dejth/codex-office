@@ -171,16 +171,7 @@ const OfficeAgent = memo(function OfficeAgent({
         className="station-scene"
         aria-hidden="true"
       >
-        <span className="desk-prop">
-          <span className="prop-screen" />
-          <span className="prop-surface" />
-        </span>
-        <span className="agent-figure">
-          <span className="agent-thought">•••</span>
-          <span className="agent-head" />
-          <span className="agent-body" />
-        </span>
-        <span className="station-spark">✦</span>
+        <span className={`pixel-character pixel-character-${agent.status}`} />
       </span>
       <span className="station-caption">
         <strong>{agent.name}</strong>

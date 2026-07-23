@@ -41,3 +41,16 @@ Keyboard traversal, visible focus, appropriate headings, live-region restraint, 
 - At widths up to 360 px, cards stack identity/status above usage while preserving hierarchy and focus behavior.
 - Fixture selection lives above the Office/Meter branch so switching modes does not reset it.
 - The code-native Office diorama and accessible tree are parallel views of the same snapshot and selection. The tree remains available beneath the visual floor.
+
+## Production visual assets
+
+The Office uses one local, transparent 128 × 128 pixel-art character per
+supported status. Images are decorative and never replace readable status,
+station, hierarchy, or selection cues. Runtime rendering makes no network
+requests.
+
+Asset identity, dimensions, hashes, and size budgets are versioned in
+`assets/office/manifest.json`; palette, scaling, motion, theme behavior, and the
+generation pipeline are documented in `docs/design/OFFICE_VISUAL_SYSTEM.md`.
+Raw generation sources are retained for provenance but excluded from packaged
+extensions.
