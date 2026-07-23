@@ -25,7 +25,12 @@ pnpm check
 pnpm dev
 ```
 
-Press `F5` in VS Code to launch the Extension Development Host. Open **Codex Office** in the Activity Bar.
+Keep `pnpm dev` running, then press `F5` in VS Code and choose
+**Run Codex Office Extension** if prompted. The checked-in launch configuration
+loads the current workspace build in an Extension Development Host regardless
+of the active editor. Open **Codex Office** in the Activity Bar. The development
+host starts without a workspace; use **File → Open Folder…** there when testing
+workspace-scoped discovery.
 
 ## Documentation map
 

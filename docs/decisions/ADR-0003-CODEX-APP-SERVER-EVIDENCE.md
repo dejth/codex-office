@@ -47,6 +47,11 @@ At build/test time, schema generation is the reproducible compatibility check. A
 4. opt into experimental API only when an explicitly supported adapter needs it; and
 5. enter a degraded state for absent methods, invalid payloads, or an unsupported version instead of guessing field names.
 
+Extension Development Host verification on Codex CLI `0.138.0` additionally
+observed the bounded runtime prefix `codex-office/0.138.0`. Capability parsing
+accepts this exact product prefix alongside `Codex Desktop/`, while retaining
+the exact version allowlist and rejecting repeated or mixed fingerprints.
+
 `InitializeCapabilities` declares client capabilities (`experimentalApi`, `requestAttestation`, and optional notification opt-outs). It is not a complete server feature manifest. Method/field presence must therefore be validated against a pinned generated schema and at the parsing boundary.
 
 ### v0.1 capability mode

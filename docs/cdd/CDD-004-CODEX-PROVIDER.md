@@ -27,6 +27,9 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 ## Capability gate
 
 - Support is an exact allowlist for `0.138.0`; every other version degrades until its generated schema and contract suite pass.
+- Runtime fingerprints are accepted only with the verified `Codex Desktop/`
+  or Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
+  other prefixes degrade without exposing the raw fingerprint.
 - The implemented mode is partial `snapshot-polling` using `initialize` and `thread/list` with `useStateDbOnly: true`.
 - Required notification names are pinned schema evidence, not proof of observation or subscription.
 - The capability result reports `hierarchyPolling: true`, `usage: false`, and `liveUpdates: false`; it never describes the overall adapter as fully supported.
