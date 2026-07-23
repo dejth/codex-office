@@ -102,8 +102,33 @@ describe("Office view", () => {
       expect(html).not.toContain("Synthetic data");
       expect(html).not.toContain("Live office preview");
       expect(html).not.toContain('aria-label="Visual agent office"');
+      expect(html).toContain('data-reduced-motion="true"');
     },
   );
+
+  it("animates empty-state sprites unless reduced motion is enabled", () => {
+    const animated = renderToStaticMarkup(
+      <OfficeView
+        agents={[]}
+        reducedMotion={false}
+        selectedId={null}
+        onSelect={() => undefined}
+        connection="disconnected"
+      />,
+    );
+    const staticView = renderToStaticMarkup(
+      <OfficeView
+        agents={[]}
+        reducedMotion
+        selectedId={null}
+        onSelect={() => undefined}
+        connection="disconnected"
+      />,
+    );
+
+    expect(animated).toContain('data-reduced-motion="false"');
+    expect(staticView).toContain('data-reduced-motion="true"');
+  });
 
   it("labels populated production data without calling it synthetic or live", () => {
     const html = renderToStaticMarkup(

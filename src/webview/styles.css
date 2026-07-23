@@ -94,6 +94,12 @@ button {
 .office-empty-state .pixel-character {
   width: min(72%, 128px);
 }
+.office-empty-state[data-reduced-motion="false"] .pixel-character {
+  animation: office-sprite-five 2.8s linear infinite;
+}
+.office-empty-state[data-reduced-motion="true"] .pixel-character {
+  animation: none;
+}
 .office-empty-state h2 {
   margin: 0;
   color: var(--vscode-foreground);

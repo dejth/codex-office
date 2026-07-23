@@ -36,8 +36,8 @@ At narrow width, prioritize agent, status, and total. Inspector becomes an in-vi
   executable, unavailable transport, unsupported version, and invalid data each
   receive specific recovery-oriented copy without exposing commands, paths,
   payloads, or session content.
-- Empty-state artwork uses the existing local production assets and introduces
-  no network requests or new motion.
+- Empty-state artwork uses the same local five-frame production motion and
+  reduced-motion gates as agent cards. It introduces no network requests.
 
 ## Meter behavior
 

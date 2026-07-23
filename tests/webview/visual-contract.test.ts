@@ -15,6 +15,9 @@ describe("Office and Meter visual contract", () => {
     expect(css).toMatch(/@media\s+\(max-width:\s*360px\)/);
     expect(css).toMatch(/@media\s+\(prefers-reduced-motion:\s*reduce\)/);
     expect(css).toContain('.office-room[data-reduced-motion="true"]');
+    expect(css).toContain(
+      '.office-empty-state[data-reduced-motion="true"] .pixel-character',
+    );
   });
 
   it("loads only local production images", () => {
@@ -35,5 +38,8 @@ describe("Office and Meter visual contract", () => {
     expect(css).toContain("background-position: 100% center");
     expect(css).not.toContain("@keyframes office-breathe");
     expect(css).not.toContain("@keyframes office-type");
+    expect(css).toContain(
+      '.office-empty-state[data-reduced-motion="false"] .pixel-character',
+    );
   });
 });

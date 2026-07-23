@@ -26,3 +26,4 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Workspace-required discovery and an isolated Extension Host profile that prevent global persisted-session flooding and unrelated extension noise during preview.
 - Local two-frame pixel-art action sprites for every Office status, with deterministic frame stepping and static reduced-motion fallbacks.
 - Five-frame Office animations with a dedicated blink frame, plus a monochrome mascot-head Activity Bar icon.
+- Five-frame blinking animation for connected-empty, degraded, disconnected, and workspace-required Office mascots.
