@@ -44,4 +44,7 @@ Protocol v1 allows at most 1,000 total agents, a tree depth of 32, bounded strin
 - Snapshot acceptance is atomic; callers preserve their last valid state when parsing fails.
 - Within one webview instance, host messages are monotonic per message type; stale and replayed sequences are ignored. The host stops posting before sequence reuse.
 - The webview sends `ready` after installing its listener. The host replies with validated settings, connection state, and a full snapshot.
-- The current scaffold sends an empty initial snapshot and does not enable agent selection until provider integration installs the projection map.
+- The webview starts from a static empty disconnected state, then the extension
+  connects the local provider and sends a complete projected snapshot.
+  Authoritative empty snapshots replace prior state. Provider refreshes are
+  serialized, and results completed after view disposal are ignored.

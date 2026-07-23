@@ -1,6 +1,6 @@
 # CDD-004 — Codex Provider Contract
 
-Status: Capability negotiation implemented for Codex CLI 0.138.0
+Status: Snapshot-polling integration implemented for Codex CLI 0.138.0
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 
@@ -36,3 +36,17 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 ## Failure behavior
 
 Provider failure never crashes VS Code. UI shows disconnected/degraded, preserves the last timestamped snapshot when safe, and gives a local troubleshooting path.
+
+## v0.1 integration boundary
+
+The extension owns a local `codex app-server --stdio` child process. It
+initializes without experimental APIs, polls `thread/loaded/list`, and reads
+each loaded thread with `includeTurns: false`. Strict boundary schemas retain
+only hierarchy identity, timestamp, and status; previews, turns, paths, Git
+metadata, and raw provider payloads are discarded.
+
+This process can observe only threads loaded in that same App Server process.
+It cannot attach to separate Codex stdio processes. Cross-process attachment,
+rollout scanning, and content-bearing resume remain out of scope without an
+accepted privacy ADR. An empty loaded-thread list is therefore authoritative,
+not an error.

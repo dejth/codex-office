@@ -89,7 +89,9 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "check": "pnpm typecheck && pnpm test && pnpm lint && pnpm format:check && pnpm build",
+    "budget:check": "node scripts/check-budgets.mjs --dist dist",
+    "smoke:clean": "node scripts/smoke-clean-profile.mjs",
+    "check": "pnpm typecheck && pnpm test && pnpm lint && pnpm format:check && pnpm build && pnpm budget:check",
     "package": "pnpm build && vsce package"
   },
   "dependencies": {

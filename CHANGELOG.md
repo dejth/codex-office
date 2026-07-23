@@ -16,3 +16,5 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 - Deterministic code-native Office diorama with status stations, presentation-only motion state, and reduced-motion fallbacks.
 - Honest Meter view with per-thread components, explicit provenance, overlap caveats, and safe handling of missing or overflowing usage.
 - Production pixel-art Office characters for all statuses with local provenance, deterministic visual baselines, and enforced asset budgets.
+- Privacy-minimized Codex 0.138.0 App Server snapshot polling with authoritative empty and degraded-state handling.
+- Deterministic bundle/package budgets and isolated VS Code profile lifecycle validation.

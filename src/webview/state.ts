@@ -7,3 +7,10 @@ export function replaceSnapshot(
 ): WebviewSnapshot {
   return next;
 }
+
+export function replaceConnection(
+  _current: WebviewSnapshot["connection"],
+  next: WebviewSnapshot["connection"],
+): WebviewSnapshot["connection"] {
+  return next;
+}
