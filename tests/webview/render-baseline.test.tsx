@@ -10,6 +10,9 @@ import { OfficeView } from "../../src/webview/office-view";
 const digest = (markup: string) =>
   createHash("sha256").update(markup).digest("hex");
 
+const normalizeEnvironmentText = (markup: string) =>
+  markup.replace(/Resets [^<]+/g, "Resets [local date and time]");
+
 describe("deterministic composed-view baselines", () => {
   it("keeps the Office structure stable", () => {
     const markup = renderToStaticMarkup(
@@ -33,8 +36,8 @@ describe("deterministic composed-view baselines", () => {
         rateLimits={previewSnapshot.rateLimits}
       />,
     );
-    expect(digest(markup)).toBe(
-      "04982a97e2e5be13829947fada9262671dc1bf174a3c21a8c31ba611166cba47",
+    expect(digest(normalizeEnvironmentText(markup))).toBe(
+      "87f0fff68805dd616e4e6510f6b143baba67d3750640206be4339d18f2200d6f",
     );
   });
 });
