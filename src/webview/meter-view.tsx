@@ -1,159 +1,96 @@
 import React, { memo, useMemo } from "react";
 
-import type { WebviewAgent } from "../protocol/webview";
-import { createUsageMeterModel, type UsageMeterAggregate } from "./usage-meter";
+import type { WebviewAgent, WebviewSnapshot } from "../protocol/webview";
+import { createUsageMeterModel } from "./usage-meter";
 
-interface MeterViewProps {
+interface AccountOverviewProps {
   agents: readonly WebviewAgent[];
-  selectedId: string | null;
-  onSelect(id: string): void;
+  rateLimits: WebviewSnapshot["rateLimits"];
 }
 
-const STATUS_LABELS: Record<WebviewAgent["status"], string> = {
-  thinking: "Thinking",
-  reading: "Reading",
-  editing: "Editing",
-  "running-command": "Running command",
-  "waiting-approval": "Waiting for approval",
-  completed: "Completed",
-  failed: "Failed",
-  idle: "Idle",
-  unknown: "Unknown",
-};
-
-const PROVENANCE_LABELS = {
-  reported: "Reported",
-  derived: "Derived",
-  estimated: "Estimated",
-} as const;
-
-export function formatTokenValue(value: number | null): string {
-  return value === null ? "—" : value.toLocaleString("en-US");
+function formatWindowDuration(minutes: number | null, index: number): string {
+  if (minutes === null)
+    return index === 0 ? "Primary window" : "Secondary window";
+  if (minutes % 10_080 === 0) return `${minutes / 10_080}-week window`;
+  if (minutes % 1_440 === 0) return `${minutes / 1_440}-day window`;
+  if (minutes % 60 === 0) return `${minutes / 60}-hour window`;
+  return `${minutes}-minute window`;
 }
 
-function aggregateLabel(aggregate: UsageMeterAggregate): string {
-  if (aggregate.overflow) return "Unavailable: safe-integer limit exceeded";
-  if (aggregate.unavailableReason === "multiple-thread-snapshots")
-    return "Not combined across threads";
-  if (aggregate.value === null || aggregate.provenance === null)
-    return "Unavailable";
-  return `${formatTokenValue(aggregate.value)} tokens, ${PROVENANCE_LABELS[aggregate.provenance].toLowerCase()}`;
+function formatReset(timestamp: string | null): string {
+  if (timestamp === null) return "Reset unavailable";
+  return `Resets ${new Date(timestamp).toLocaleString()}`;
 }
 
-export const MeterView = memo(function MeterView({
+export const AccountOverview = memo(function AccountOverview({
   agents,
-  selectedId,
-  onSelect,
-}: MeterViewProps): React.JSX.Element {
+  rateLimits,
+}: AccountOverviewProps): React.JSX.Element {
   const model = useMemo(() => createUsageMeterModel(agents), [agents]);
-  const total = model.summary.usage.total;
+  const capacityWindows =
+    rateLimits === null
+      ? []
+      : [rateLimits.primary, rateLimits.secondary].filter(
+          (window): window is NonNullable<typeof window> => window !== null,
+        );
 
   return (
-    <section className="meter-view" aria-labelledby="meter-heading">
-      <div className="section-heading">
+    <section className="account-overview" aria-labelledby="account-heading">
+      <div className="account-overview-heading">
         <div>
-          <p className="eyebrow">Thread snapshots</p>
-          <h1 id="meter-heading">Reported usage</h1>
+          <p className="eyebrow">Local Codex account</p>
+          <h1 id="account-heading">Usage</h1>
         </div>
         <span className="preview-badge">Not billing data</span>
       </div>
-      <p className="view-summary">
-        Values are reported per visible thread. Parent and child context may
-        overlap, so totals are not quota or cost.
+      <p className="account-disclaimer">
+        Reported account limits from the local Codex provider. Not token billing
+        or cost.
       </p>
 
-      <div className="meter-summary" aria-label="Usage summary">
-        <div className="meter-total">
-          <span>Cross-thread total</span>
-          <strong>{formatTokenValue(total.value)}</strong>
-          <small>{aggregateLabel(total)}</small>
-        </div>
-        <dl className="meter-counts">
-          <div>
-            <dt>Main</dt>
-            <dd>{model.summary.mainAgents}</dd>
-          </div>
-          <div>
-            <dt>Subagents</dt>
-            <dd>{model.summary.subagents}</dd>
-          </div>
-          <div>
-            <dt>Threads</dt>
-            <dd>{model.summary.visibleThreads}</dd>
-          </div>
-        </dl>
-      </div>
-
-      {model.rows.length === 0 ? (
-        <p className="meter-empty">No reported usage is available.</p>
+      {capacityWindows.length === 0 ? (
+        <p className="account-capacity-unavailable">
+          Account capacity unavailable
+        </p>
       ) : (
-        <ul className="meter-list" aria-label="Per-thread reported usage">
-          {model.rows.map((row) => {
-            const provenance = row.usage?.provenance ?? null;
+        <div className="compact-capacity-list">
+          {capacityWindows.map((window, index) => {
+            const label = formatWindowDuration(
+              window.windowDurationMinutes,
+              index,
+            );
             return (
-              <li key={row.id} data-depth={Math.min(row.depth, 3)}>
-                <button
-                  type="button"
-                  className="meter-row"
-                  aria-pressed={selectedId === row.id}
-                  aria-label={`${row.name}, hierarchy level ${row.depth + 1}, ${STATUS_LABELS[row.status]}, ${row.usage?.total === null || row.usage === null ? "usage unavailable" : `${formatTokenValue(row.usage.total)} tokens, ${PROVENANCE_LABELS[row.usage.provenance].toLowerCase()}`}`}
-                  onClick={() => onSelect(row.id)}
-                >
-                  <span className="meter-agent">
-                    <strong>{row.name}</strong>
-                    <small>{STATUS_LABELS[row.status]}</small>
-                  </span>
-                  <span className="meter-value">
-                    <strong>
-                      {formatTokenValue(row.usage?.total ?? null)}
-                    </strong>
-                    <small
-                      className={
-                        provenance === null
-                          ? "provenance-unavailable"
-                          : `provenance-${provenance}`
-                      }
-                    >
-                      {provenance === null
-                        ? "Unavailable"
-                        : PROVENANCE_LABELS[provenance]}
-                    </small>
-                  </span>
-                </button>
-                <details className="meter-components">
-                  <summary>Components</summary>
-                  <dl>
-                    <div>
-                      <dt>Input</dt>
-                      <dd>{formatTokenValue(row.usage?.input ?? null)}</dd>
-                    </div>
-                    <div>
-                      <dt>Cached input</dt>
-                      <dd>
-                        {formatTokenValue(row.usage?.cachedInput ?? null)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Output</dt>
-                      <dd>{formatTokenValue(row.usage?.output ?? null)}</dd>
-                    </div>
-                  </dl>
-                </details>
-              </li>
+              <div className="compact-capacity" key={`${label}-${index}`}>
+                <div className="compact-capacity-label">
+                  <span>{label}</span>
+                  <strong>{window.usedPercent}% used</strong>
+                </div>
+                <progress
+                  aria-label={`${label}, ${window.usedPercent}% used`}
+                  max={100}
+                  value={window.usedPercent}
+                />
+                <small>{formatReset(window.resetsAt)}</small>
+              </div>
             );
           })}
-        </ul>
+        </div>
       )}
 
-      <details className="provenance-note">
-        <summary>How to read these numbers</summary>
-        <p>
-          <strong>Reported</strong> comes from Codex for one thread.{" "}
-          <strong>Derived</strong> is deterministic arithmetic over compatible
-          values. <strong>Estimated</strong> is heuristic and visually marked.
-          Missing values remain — rather than becoming zero.
-        </p>
-      </details>
+      <dl className="compact-account-counts" aria-label="Session summary">
+        <div>
+          <dt>Root sessions</dt>
+          <dd>{model.summary.mainAgents}</dd>
+        </div>
+        <div>
+          <dt>Subagents</dt>
+          <dd>{model.summary.subagents}</dd>
+        </div>
+        <div>
+          <dt>Threads</dt>
+          <dd>{model.summary.visibleThreads}</dd>
+        </div>
+      </dl>
     </section>
   );
 });

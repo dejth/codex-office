@@ -15,7 +15,6 @@ Only sanitized, minimal messages cross the extension/webview boundary. Every mes
 
 - `ready`.
 - `select-agent` with opaque agent ID.
-- `set-view` with `office | meter`.
 - `refresh`.
 - `open-settings`.
 

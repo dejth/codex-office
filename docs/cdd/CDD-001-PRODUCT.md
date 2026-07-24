@@ -10,13 +10,15 @@ A developer running Codex locally who wants an immediate, friendly view of agent
 
 - See main and nested subagents in one sidebar.
 - Understand whether each agent is working, waiting, finished, failed, or unknown.
-- Switch between animated Office and information-dense Meter views.
+- See animated agents and compact local account capacity in one sidebar.
 - Inspect reported per-thread usage and its provenance.
 - Keep sensitive activity on-device.
 
 ## v0.1 scope
 
-Activity Bar container, sidebar webview, Office/Meter switch, live hierarchy, basic state mapping, reported usage, agent inspector, empty/degraded states, local settings, fixtures, and VSIX packaging.
+Activity Bar container, unified sidebar webview, hierarchy, basic state
+mapping, reported account capacity, agent selection, empty/degraded states,
+local settings, fixtures, and VSIX packaging.
 
 ## Non-goals
 

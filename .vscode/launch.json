@@ -7,7 +7,8 @@
       "request": "launch",
       "args": [
         "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}"
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--folder-uri=file://${workspaceFolder}"
       ],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "sourceMaps": true

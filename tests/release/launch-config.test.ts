@@ -29,11 +29,15 @@ describe("VS Code Extension Host launch configuration", () => {
         args: [
           "--disable-extensions",
           "--extensionDevelopmentPath=${workspaceFolder}",
+          "--folder-uri=file://${workspaceFolder}",
         ],
         outFiles: ["${workspaceFolder}/dist/**/*.js"],
         sourceMaps: true,
       },
     ]);
-    expect(launch.configurations[0]?.args).toHaveLength(2);
+    expect(launch.configurations[0]?.args).toHaveLength(3);
+    expect(launch.configurations[0]?.args.at(-1)).toBe(
+      "--folder-uri=file://${workspaceFolder}",
+    );
   });
 });

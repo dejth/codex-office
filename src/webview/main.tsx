@@ -9,18 +9,15 @@ import {
   type WebviewToHostMessage,
 } from "../protocol/webview";
 import "./styles.css";
-import { AgentTree } from "./agent-tree";
 import { ConnectionNotice } from "./connection-notice";
 import { OfficeView } from "./office-view";
-import { MeterView } from "./meter-view";
+import { AccountOverview } from "./meter-view";
 import {
   replaceConnection,
   replaceConnectionFromSnapshot,
   replaceSnapshot,
   type ConnectionState,
 } from "./state";
-
-type ViewMode = "office" | "meter";
 
 declare function acquireVsCodeApi(): {
   postMessage(message: WebviewToHostMessage): void;
@@ -31,12 +28,12 @@ const INITIAL_SNAPSHOT: WebviewSnapshot = {
   id: "snapshot_initial",
   updatedAt: "1970-01-01T00:00:00.000Z",
   agents: [],
+  rateLimits: null,
   unresolved: [],
   connection: "disconnected",
 };
 
 function App(): React.JSX.Element {
-  const [mode, setMode] = useState<ViewMode>("office");
   const [announcement, setAnnouncement] = useState("");
   const [snapshot, setSnapshot] = useState<WebviewSnapshot>(INITIAL_SNAPSHOT);
   const [connection, setConnection] = useState<ConnectionState>({
@@ -61,7 +58,6 @@ function App(): React.JSX.Element {
       );
 
       if (parsed.message.type === "settings") {
-        setMode(parsed.message.defaultView);
         setReducedMotion(parsed.message.reducedMotion);
       } else if (parsed.message.type === "snapshot") {
         const nextSnapshot = parsed.message.snapshot;
@@ -88,15 +84,6 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  const selectMode = (view: ViewMode): void => {
-    setMode(view);
-    vscode.postMessage({
-      protocolVersion: WEBVIEW_PROTOCOL_VERSION,
-      type: "set-view",
-      view,
-    });
-  };
-
   const selectAgent = useCallback((agentId: string): void => {
     setSelectedId(agentId);
     vscode.postMessage({
@@ -110,52 +97,19 @@ function App(): React.JSX.Element {
     <main>
       <header>
         <strong>Codex Office</strong>
-        <nav aria-label="View mode">
-          <button
-            aria-pressed={mode === "office"}
-            onClick={() => selectMode("office")}
-          >
-            Office
-          </button>
-          <button
-            aria-pressed={mode === "meter"}
-            onClick={() => selectMode("meter")}
-          >
-            Meter
-          </button>
-        </nav>
       </header>
       <ConnectionNotice state={connection.state} reason={connection.reason} />
-      {mode === "office" ? (
-        <>
-          <OfficeView
-            agents={snapshot.agents}
-            reducedMotion={reducedMotion}
-            selectedId={selectedId}
-            onSelect={selectAgent}
-            connection={connection.state}
-          />
-          {snapshot.agents.length > 0 ? (
-            <div className="tree-fallback">
-              <h2>Accessible agent list</h2>
-              <p className="view-summary">
-                Navigate with arrow keys. Press Enter or Space to select.
-              </p>
-              <AgentTree
-                agents={snapshot.agents}
-                selectedId={selectedId}
-                onSelect={selectAgent}
-              />
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <MeterView
-          agents={snapshot.agents}
-          selectedId={selectedId}
-          onSelect={selectAgent}
-        />
-      )}
+      <AccountOverview
+        agents={snapshot.agents}
+        rateLimits={snapshot.rateLimits}
+      />
+      <OfficeView
+        agents={snapshot.agents}
+        reducedMotion={reducedMotion}
+        selectedId={selectedId}
+        onSelect={selectAgent}
+        connection={connection.state}
+      />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>

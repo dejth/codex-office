@@ -4,6 +4,7 @@ export interface HierarchyAgent {
   id: string;
   parentId: string | null;
   name: string;
+  displayName?: string;
   task: string | null;
   status: AgentStatus;
   usage: TokenUsage | null;
@@ -177,6 +178,9 @@ function toNode(agent: HierarchyAgent): AgentNode {
     id: agent.id,
     parentId: agent.parentId,
     name: agent.name,
+    ...(agent.displayName === undefined
+      ? {}
+      : { displayName: agent.displayName }),
     task: agent.task,
     status: agent.status,
     usage: agent.usage === null ? null : { ...agent.usage },

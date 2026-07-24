@@ -5,6 +5,19 @@ export const previewSnapshot: WebviewSnapshot = {
   id: "snapshot_preview",
   updatedAt: "2026-01-01T00:00:00.000Z",
   connection: "disconnected",
+  rateLimits: {
+    primary: {
+      usedPercent: 38,
+      windowDurationMinutes: 300,
+      resetsAt: "2026-01-01T04:00:00.000Z",
+    },
+    secondary: {
+      usedPercent: 62,
+      windowDurationMinutes: 10_080,
+      resetsAt: "2026-01-05T00:00:00.000Z",
+    },
+    provenance: "reported",
+  },
   unresolved: [],
   agents: [
     {

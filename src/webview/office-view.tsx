@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<WebviewAgent["status"], string> = {
   completed: "Completed",
   failed: "Failed",
   idle: "Idle",
-  unknown: "Unknown",
+  unknown: "Unreported",
 };
 
 interface OfficeViewProps {
@@ -44,6 +44,49 @@ interface OfficeViewProps {
 interface PositionedAgent {
   agent: WebviewAgent;
   level: number;
+}
+
+type OfficeFilter = "all" | "active" | "waiting" | "done" | "unreported";
+
+const FILTERS: ReadonlyArray<{ id: OfficeFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "active", label: "Active" },
+  { id: "waiting", label: "Waiting" },
+  { id: "done", label: "Done" },
+  { id: "unreported", label: "Unreported" },
+];
+
+function matchesOfficeFilter(
+  status: WebviewAgent["status"],
+  filter: OfficeFilter,
+): boolean {
+  if (filter === "all") return true;
+  if (filter === "unreported") return status === "unknown";
+  if (filter === "waiting") return status === "waiting-approval";
+  if (filter === "done")
+    return status === "completed" || status === "failed" || status === "idle";
+  return (
+    status === "thinking" ||
+    status === "reading" ||
+    status === "editing" ||
+    status === "running-command"
+  );
+}
+
+export function nextOfficeFocusId(
+  ids: readonly string[],
+  currentId: string,
+  key: string,
+): string {
+  const index = ids.indexOf(currentId);
+  if (index < 0 || ids.length === 0) return currentId;
+  if (key === "Home") return ids[0]!;
+  if (key === "End") return ids[ids.length - 1]!;
+  if (key === "ArrowRight" || key === "ArrowDown")
+    return ids[Math.min(index + 1, ids.length - 1)]!;
+  if (key === "ArrowLeft" || key === "ArrowUp")
+    return ids[Math.max(index - 1, 0)]!;
+  return currentId;
 }
 
 function flattenOfficeAgents(
@@ -76,7 +119,46 @@ export const OfficeView = memo(function OfficeView({
   connection,
 }: OfficeViewProps): React.JSX.Element {
   const positioned = useMemo(() => flattenOfficeAgents(agents), [agents]);
+  const [filter, setFilter] = useState<OfficeFilter>("all");
+  const visible = useMemo(
+    () =>
+      positioned.filter(
+        ({ agent, level }) =>
+          level === 1 || matchesOfficeFilter(agent.status, filter),
+      ),
+    [filter, positioned],
+  );
+  const visibleIds = useMemo(
+    () => visible.map(({ agent }) => agent.id),
+    [visible],
+  );
+  const [focusedId, setFocusedId] = useState<string | null>(selectedId);
+  const activeId = visibleIds.includes(focusedId ?? "")
+    ? focusedId
+    : visibleIds.includes(selectedId ?? "")
+      ? selectedId
+      : (visibleIds[0] ?? null);
   const isEmpty = positioned.length === 0;
+  const subagentCount = Math.max(positioned.length - agents.length, 0);
+  const unreportedCount = positioned.filter(
+    ({ agent }) => agent.status === "unknown",
+  ).length;
+
+  useEffect(() => {
+    setFocusedId((current) =>
+      visibleIds.includes(current ?? "")
+        ? current
+        : visibleIds.includes(selectedId ?? "")
+          ? selectedId
+          : (visibleIds[0] ?? null),
+    );
+  }, [selectedId, visibleIds]);
+
+  const moveFocus = (currentId: string, key: string): void => {
+    const nextId = nextOfficeFocusId(visibleIds, currentId, key);
+    setFocusedId(nextId);
+    document.getElementById(`office-agent-${nextId}`)?.focus();
+  };
 
   return (
     <section className="office-view" aria-labelledby="office-heading">
@@ -85,12 +167,31 @@ export const OfficeView = memo(function OfficeView({
           <p className="eyebrow">Codex workspace</p>
           <h1 id="office-heading">Agent floor</h1>
         </div>
-        {isEmpty ? null : <span className="preview-badge">Local sessions</span>}
+        {isEmpty ? null : (
+          <span className="preview-badge">
+            {agents.length} Roots · {subagentCount} Subs
+          </span>
+        )}
       </div>
       <p className="view-summary">
         Sessions appear at deterministic stations using status reported by the
         local Codex provider.
       </p>
+      {isEmpty ? null : (
+        <div className="office-filters" aria-label="Filter agents">
+          {FILTERS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={filter === id}
+              onClick={() => setFilter(id)}
+            >
+              {label}
+              {id === "unreported" ? ` ${unreportedCount}` : ""}
+            </button>
+          ))}
+        </div>
+      )}
       {isEmpty ? (
         <OfficeEmptyState
           connection={connection}
@@ -103,17 +204,20 @@ export const OfficeView = memo(function OfficeView({
           aria-label="Visual agent office"
         >
           <div className="office-wall" aria-hidden="true">
-            <span className="office-logo">CO</span>
-            <span className="office-clock">09:41</span>
+            <span className="office-mark" />
+            <span>{visible.length} in room</span>
           </div>
           <div className="office-floor">
-            {positioned.map(({ agent, level }) => (
+            {visible.map(({ agent, level }) => (
               <OfficeAgent
                 key={agent.id}
                 agent={agent}
                 level={level}
                 reducedMotion={reducedMotion}
                 selected={selectedId === agent.id}
+                tabIndex={activeId === agent.id ? 0 : -1}
+                onFocus={setFocusedId}
+                onMoveFocus={moveFocus}
                 onSelect={onSelect}
               />
             ))}
@@ -173,6 +277,9 @@ interface OfficeAgentProps {
   level: number;
   reducedMotion: boolean;
   selected: boolean;
+  tabIndex: number;
+  onFocus(id: string): void;
+  onMoveFocus(id: string, key: string): void;
   onSelect(id: string): void;
 }
 
@@ -181,6 +288,9 @@ const OfficeAgent = memo(function OfficeAgent({
   level,
   reducedMotion,
   selected,
+  tabIndex,
+  onFocus,
+  onMoveFocus,
   onSelect,
 }: OfficeAgentProps): React.JSX.Element {
   const [animation, setAnimation] = useState<OfficeAnimationState>(() =>
@@ -211,16 +321,32 @@ const OfficeAgent = memo(function OfficeAgent({
       type="button"
       aria-pressed={selected}
       aria-label={`${agent.name}, ${statusLabel}, ${STATION_LABELS[animation.station]}`}
+      id={`office-agent-${agent.id}`}
+      tabIndex={tabIndex}
       data-accent={animation.accent}
       data-level={level}
+      data-root={level === 1 ? "true" : "false"}
       data-motion={animation.motion}
       data-transition={transition}
       onClick={() => onSelect(agent.id)}
+      onFocus={() => onFocus(agent.id)}
+      onKeyDown={(event) => {
+        if (
+          [
+            "ArrowDown",
+            "ArrowUp",
+            "ArrowLeft",
+            "ArrowRight",
+            "Home",
+            "End",
+          ].includes(event.key)
+        ) {
+          event.preventDefault();
+          onMoveFocus(agent.id, event.key);
+        }
+      }}
     >
-      <span className="station-sign">
-        {level === 1 ? "Main" : `L${level}`} ·{" "}
-        {STATION_LABELS[animation.station]}
-      </span>
+      <span className="station-sign">{level === 1 ? "Main" : "Sub"}</span>
       <span
         key={transitionRevision}
         className="station-scene"

@@ -11,7 +11,7 @@ const STATUS = {
   completed: { icon: "✓", label: "Completed" },
   failed: { icon: "×", label: "Failed" },
   idle: { icon: "·", label: "Idle" },
-  unknown: { icon: "?", label: "Unknown" },
+  unknown: { icon: "?", label: "Unreported" },
 } as const;
 
 export interface FlatTreeItem {
