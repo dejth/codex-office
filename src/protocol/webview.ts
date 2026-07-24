@@ -45,6 +45,20 @@ const usageSchema = z
     provenance: z.enum(["reported", "derived", "estimated"]),
   })
   .strict();
+const rateLimitWindowSchema = z
+  .object({
+    usedPercent: z.number().finite().min(0).max(100),
+    windowDurationMinutes: z.number().int().positive().safe().nullable(),
+    resetsAt: z.string().refine(isCanonicalTimestamp).nullable(),
+  })
+  .strict();
+const accountRateLimitsSchema = z
+  .object({
+    primary: rateLimitWindowSchema.nullable(),
+    secondary: rateLimitWindowSchema.nullable(),
+    provenance: z.literal("reported"),
+  })
+  .strict();
 
 export interface WebviewAgent {
   id: string;
@@ -71,6 +85,7 @@ const snapshotSchema = z
     id: idSchema,
     updatedAt: z.string().refine(isCanonicalTimestamp),
     agents: z.array(agentSchema).max(MAX_AGENTS),
+    rateLimits: accountRateLimitsSchema.nullable(),
     unresolved: z
       .array(
         z
@@ -154,7 +169,6 @@ const hostMessageSchema = z.discriminatedUnion("type", [
       protocolVersion,
       sequence,
       type: z.literal("settings"),
-      defaultView: z.enum(["office", "meter"]),
       reducedMotion: z.boolean(),
     })
     .strict(),
@@ -169,13 +183,6 @@ const webviewMessageSchema = z.discriminatedUnion("type", [
       protocolVersion,
       type: z.literal("select-agent"),
       agentId: idSchema,
-    })
-    .strict(),
-  z
-    .object({
-      protocolVersion,
-      type: z.literal("set-view"),
-      view: z.enum(["office", "meter"]),
     })
     .strict(),
   z.object({ protocolVersion, type: z.literal("refresh") }).strict(),
@@ -233,7 +240,8 @@ function projectOfficeSnapshotUnsafe(
   if (
     !isRecord(source) ||
     typeof source.updatedAt !== "string" ||
-    !isCanonicalTimestamp(source.updatedAt)
+    !isCanonicalTimestamp(source.updatedAt) ||
+    !accountRateLimitsSchema.nullable().safeParse(source.rateLimits).success
   ) {
     return { ok: false, reason: "invalid-source" };
   }
@@ -290,9 +298,14 @@ function projectOfficeSnapshotUnsafe(
     seenObjects.add(current.source);
     seenDomainIds.add(current.source.id);
     const id = mintAgentId(nextId++);
+    const projectedName =
+      typeof current.source.displayName === "string" &&
+      safeNameSchema.safeParse(current.source.displayName).success
+        ? current.source.displayName
+        : `Agent ${nextId - 1}`;
     const projected: WebviewAgent = {
       id,
-      name: `Agent ${nextId - 1}`,
+      name: projectedName,
       status: current.source.status,
       usage: current.source.usage === null ? null : { ...current.source.usage },
       children: [],
@@ -316,6 +329,20 @@ function projectOfficeSnapshotUnsafe(
     id: "snapshot_current",
     updatedAt: source.updatedAt,
     agents: roots,
+    rateLimits:
+      source.rateLimits === null
+        ? null
+        : {
+            primary:
+              source.rateLimits.primary === null
+                ? null
+                : { ...source.rateLimits.primary },
+            secondary:
+              source.rateLimits.secondary === null
+                ? null
+                : { ...source.rateLimits.secondary },
+            provenance: "reported",
+          },
     unresolved: safeUnresolved,
     connection: source.connection,
   };
@@ -365,7 +392,6 @@ export function parseWebviewToHostMessage(
     return parseMessage(value, webviewMessageSchema, [
       "ready",
       "select-agent",
-      "set-view",
       "refresh",
       "open-settings",
     ]);

@@ -106,6 +106,32 @@ describe("CodexProvider", () => {
     });
   });
 
+  it("resolves a workspace that becomes available after activation", async () => {
+    const transport = configuredTransport(thread("workspace-thread", null));
+    const workspace = { cwd: undefined as string | undefined };
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+      () => workspace.cwd,
+      true,
+    );
+
+    await provider.connect();
+    expect(provider.diagnostic()).toBe("workspace-required");
+    expect(transport.started).toBe(0);
+
+    workspace.cwd = "/synthetic/workspace";
+    await provider.connect();
+
+    expect(provider.diagnostic()).toBe("none");
+    expect(transport.started).toBe(1);
+    expect(
+      transport.calls.find(({ method }) => method === "thread/list"),
+    ).toMatchObject({
+      params: { cwd: "/synthetic/workspace" },
+    });
+  });
+
   it("ignores a stale initialize after disconnect and reconnect", async () => {
     let rejectFirst: ((error: Error) => void) | undefined;
     const first = new FakeTransport().queue(
@@ -184,6 +210,84 @@ describe("CodexProvider", () => {
     );
   });
 
+  it("reconstructs state-db subagent edges from versioned spawn metadata", async () => {
+    const transport = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+      thread(
+        "thread-child",
+        null,
+        { type: "notLoaded" },
+        {
+          sessionId: "child-session",
+          source: {
+            subAgent: {
+              thread_spawn: {
+                parent_thread_id: "thread-root",
+                depth: 1,
+                agent_path: "/private/never-project",
+                agent_nickname: "Kepler",
+                agent_role: "explorer",
+              },
+            },
+          },
+          agentNickname: "Kepler",
+          agentRole: "explorer",
+        },
+      ),
+    );
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(snapshot.connection).toBe("connected");
+    expect(snapshot.agents).toHaveLength(1);
+    expect(snapshot.agents[0]?.children).toHaveLength(1);
+    expect(snapshot.agents[0]?.children[0]).toMatchObject({
+      id: "thread-child",
+      parentId: "thread-root",
+      name: "Codex agent",
+      displayName: "Kepler",
+      status: "unknown",
+    });
+    expect(JSON.stringify(snapshot)).not.toMatch(/private|agent_path|explorer/);
+  });
+
+  it("fails closed when a spawn parent is absent from the bounded workspace", async () => {
+    const transport = configuredTransport(
+      thread(
+        "orphan-child",
+        null,
+        { type: "notLoaded" },
+        {
+          source: {
+            subAgent: {
+              thread_spawn: {
+                parent_thread_id: "outside-workspace",
+                depth: 1,
+                agent_path: null,
+                agent_nickname: "Noether",
+                agent_role: null,
+              },
+            },
+          },
+        },
+      ),
+    );
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+
+    expect((await provider.snapshot()).connection).toBe("degraded");
+    expect((await provider.snapshot()).agents).toEqual([]);
+  });
+
   it("maps every available thread status conservatively", async () => {
     const transport = configuredTransport(
       thread("active", null, { type: "active", activeFlags: [] }),
@@ -212,6 +316,88 @@ describe("CodexProvider", () => {
       idle: "idle",
       unknown: "unknown",
     });
+  });
+
+  it("projects only bounded reported account-capacity windows", async () => {
+    const transport = configuredTransport(thread("root", null)).queue(
+      "account/rateLimits/read",
+      {
+        rateLimits: {
+          limitId: "must-be-discarded",
+          primary: {
+            usedPercent: 38.5,
+            windowDurationMins: 300,
+            resetsAt: 1_753_261_200,
+          },
+          secondary: {
+            usedPercent: 62,
+            windowDurationMins: 10_080,
+            resetsAt: null,
+          },
+          credits: {
+            balance: "private-credit-balance",
+          },
+        },
+        rateLimitsByLimitId: {
+          private: { secret: "must-be-discarded" },
+        },
+      },
+    );
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(transport.calls).toContainEqual({
+      method: "account/rateLimits/read",
+      params: {},
+    });
+    expect(snapshot.rateLimits).toEqual({
+      primary: {
+        usedPercent: 38.5,
+        windowDurationMinutes: 300,
+        resetsAt: "2025-07-23T09:00:00.000Z",
+      },
+      secondary: {
+        usedPercent: 62,
+        windowDurationMinutes: 10_080,
+        resetsAt: null,
+      },
+      provenance: "reported",
+    });
+    expect(JSON.stringify(snapshot)).not.toMatch(
+      /limitId|credit|balance|private|secret/,
+    );
+  });
+
+  it("keeps hierarchy available when account capacity is malformed", async () => {
+    const transport = configuredTransport(thread("root", null)).queue(
+      "account/rateLimits/read",
+      {
+        rateLimits: {
+          primary: {
+            usedPercent: 101,
+            windowDurationMins: 300,
+            resetsAt: null,
+          },
+          secondary: null,
+        },
+      },
+    );
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(snapshot.connection).toBe("connected");
+    expect(snapshot.agents).toHaveLength(1);
+    expect(snapshot.rateLimits).toBeNull();
   });
 
   it("paginates persisted threads with the exact workspace filter", async () => {
@@ -270,6 +456,7 @@ describe("CodexProvider", () => {
       sessionId: null,
       updatedAt: NOW.toISOString(),
       agents: [],
+      rateLimits: null,
       connection: "connected",
     });
     expect(listener).toHaveBeenCalledWith(snapshot);

@@ -4,11 +4,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { previewSnapshot } from "../../src/protocol/preview-fixture";
-import { MeterView } from "../../src/webview/meter-view";
+import { AccountOverview } from "../../src/webview/meter-view";
 import { OfficeView } from "../../src/webview/office-view";
 
 const digest = (markup: string) =>
   createHash("sha256").update(markup).digest("hex");
+
+const normalizeEnvironmentText = (markup: string) =>
+  markup.replace(/Resets [^<]+/g, "Resets [local date and time]");
 
 describe("deterministic composed-view baselines", () => {
   it("keeps the Office structure stable", () => {
@@ -22,20 +25,19 @@ describe("deterministic composed-view baselines", () => {
       />,
     );
     expect(digest(markup)).toBe(
-      "4556b81ccee353e2e2574b9f4823e718ca2a7b675a328d15e18fe5b3f78a211e",
+      "132d3a56e25285ec3856ca1e3629ba65d1c2e2d6538a547997a05af944775406",
     );
   });
 
-  it("keeps the Meter structure stable", () => {
+  it("keeps the compact account structure stable", () => {
     const markup = renderToStaticMarkup(
-      <MeterView
+      <AccountOverview
         agents={previewSnapshot.agents}
-        selectedId="agent_preview_3"
-        onSelect={() => undefined}
+        rateLimits={previewSnapshot.rateLimits}
       />,
     );
-    expect(digest(markup)).toBe(
-      "2dbfda3edced4b1f55afea8c072b5806edefac251522a6fb7f1bb195ef04f500",
+    expect(digest(normalizeEnvironmentText(markup))).toBe(
+      "87f0fff68805dd616e4e6510f6b143baba67d3750640206be4339d18f2200d6f",
     );
   });
 });

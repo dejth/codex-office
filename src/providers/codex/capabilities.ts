@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const REQUIRED_REQUEST_METHODS = ["initialize", "thread/list"] as const;
+export const REQUIRED_REQUEST_METHODS = [
+  "initialize",
+  "thread/list",
+  "account/rateLimits/read",
+] as const;
 
 export const REQUIRED_NOTIFICATION_METHODS = [
   "thread/started",
@@ -45,6 +49,7 @@ export interface CodexCapabilityResult {
   experimentalApi: false;
   capabilities: {
     hierarchyPolling: boolean;
+    accountRateLimits: boolean;
     usage: false;
     liveUpdates: false;
   };
@@ -135,7 +140,12 @@ function makeResult(
     version,
     mode: "snapshot-polling",
     experimentalApi: false,
-    capabilities: { hierarchyPolling, usage: false, liveUpdates: false },
+    capabilities: {
+      hierarchyPolling,
+      accountRateLimits: hierarchyPolling,
+      usage: false,
+      liveUpdates: false,
+    },
     diagnostics,
   };
 }

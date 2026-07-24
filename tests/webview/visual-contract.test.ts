@@ -7,7 +7,7 @@ const css = readFileSync(
   "utf8",
 );
 
-describe("Office and Meter visual contract", () => {
+describe("unified Office visual contract", () => {
   it("keeps focus, theme, high-contrast, narrow, and reduced-motion gates", () => {
     expect(css).toContain(":focus-visible");
     expect(css).toContain("--vscode-foreground");
@@ -43,5 +43,9 @@ describe("Office and Meter visual contract", () => {
     );
     expect(css).toContain("width: min(100%, 192px)");
     expect(css).toContain("width: min(92%, 192px)");
+    expect(css).toContain(".office-station .pixel-character");
+    expect(css).toContain('.office-station[data-root="true"]');
+    expect(css).toContain("minmax(104px, 1fr)");
+    expect(css).toMatch(/\.station-caption\s*\{[^}]*display:\s*grid/s);
   });
 });

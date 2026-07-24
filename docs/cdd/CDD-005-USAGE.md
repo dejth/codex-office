@@ -1,8 +1,9 @@
 # CDD-005 — Usage Accounting Contract
 
-Status: Verified for v0.1 Meter model
+Status: Verified for v0.1 reported account-capacity model
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
+and [ADR-0004](../decisions/ADR-0004-STATE-DB-SPAWN-AND-ACCOUNT-CAPACITY.md)
 
 ## Labels
 
@@ -25,10 +26,26 @@ Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md
 
 New cumulative event, same event repeated, out-of-order event, process restart, resume, child spawn with replayed context, missing cached field, counter reset, and conflicting total/components.
 
-## Meter presentation model
+## Thread-usage model
 
-- Meter rows preserve each sanitized thread's input, cached input, output, total, and provenance without coercing missing values to zero.
-- Meter does not combine cumulative values across visible threads because parent/child context may overlap. A cross-thread total remains unavailable unless exactly one thread contributes.
+- The display model preserves each sanitized thread's input, cached input,
+  output, total, and provenance without coercing missing values to zero.
+- The product does not combine cumulative values across visible threads because
+  parent/child context may overlap.
 - A component that would exceed `Number.MAX_SAFE_INTEGER` fails closed to unavailable without hiding other safe components.
 - Equal values, replay-like values, and parent/child context are neither deduplicated nor added without stable evidence. The UI labels the scope as visible thread snapshots and warns that context may overlap.
-- Meter copy says `Reported usage` and explicitly disclaims billing, quota, and cost accuracy.
+- Thread usage remains hidden while the current provider cannot report it.
+
+## Account-capacity presentation
+
+- `account/rateLimits/read` is exact-version evidence for reported account
+  windows, not thread token usage or billing.
+- Retain only primary and secondary percentage used, window duration, and
+  canonical reset time. Discard plan, credits, balances, limit names and IDs,
+  spend controls, and raw bucket data.
+- Display each available window independently in the compact account overview
+  with `reported` provenance and `not billing data` copy.
+- Read at most once per minute while connected. Failure or malformed account
+  capacity remains unavailable and does not replace safe hierarchy state.
+- Never derive per-thread tokens, cost, or cross-thread usage from an account
+  percentage.

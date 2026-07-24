@@ -29,10 +29,14 @@ describe("negotiateCodexCapabilities", () => {
     ).toBe(true);
   });
 
-  it("reports exact 0.138.0 as partial hierarchy-only polling", () => {
+  it("reports exact 0.138.0 as partial metadata and account-capacity polling", () => {
     const result = negotiateCodexCapabilities(VALID_INITIALIZE);
 
-    expect(REQUIRED_REQUEST_METHODS).toEqual(["initialize", "thread/list"]);
+    expect(REQUIRED_REQUEST_METHODS).toEqual([
+      "initialize",
+      "thread/list",
+      "account/rateLimits/read",
+    ]);
     expect(result).toEqual({
       status: "partial",
       version: "0.138.0",
@@ -40,6 +44,7 @@ describe("negotiateCodexCapabilities", () => {
       experimentalApi: false,
       capabilities: {
         hierarchyPolling: true,
+        accountRateLimits: true,
         usage: false,
         liveUpdates: false,
       },

@@ -65,15 +65,6 @@
     "configuration": {
       "title": "Codex Office",
       "properties": {
-        "codexOffice.defaultView": {
-          "type": "string",
-          "enum": [
-            "office",
-            "meter"
-          ],
-          "default": "office",
-          "description": "View shown when the sidebar opens."
-        },
         "codexOffice.reducedMotion": {
           "type": "boolean",
           "default": false,
