@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { previewSnapshot } from "../../src/protocol/preview-fixture";
 import type { WebviewAgent } from "../../src/protocol/webview";
-import { OfficeView } from "../../src/webview/office-view";
+import { nextOfficeFocusId, OfficeView } from "../../src/webview/office-view";
 
 const allStatuses: WebviewAgent["status"][] = [
   "thinking",
@@ -36,7 +36,62 @@ describe("Office view", () => {
     expect(html).toContain("Celebration corner");
     expect(html).toContain('data-motion="typing-loop"');
     expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain("1 Roots · 3 Subs");
+    expect(html).toContain("4 in room");
+    expect(html).toContain('aria-label="Filter agents"');
+    expect(html).toContain("Unreported 0");
+    expect(html.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(html.match(/tabindex="-1"/g)).toHaveLength(3);
+    expect(html.match(/data-root="true"/g)).toHaveLength(1);
+    expect(html.match(/data-root="false"/g)).toHaveLength(3);
+    expect(html).toContain('<span class="station-sign">Main</span>');
+    expect(html).toContain('<span class="station-sign">Sub</span>');
+    expect(html).toContain('aria-label="Agent 1, Editing, Writing desk"');
+    expect(html).not.toContain(">CO<");
+    expect(html).not.toContain("09:41");
     expect(html).not.toContain("sessionId");
+  });
+
+  it("counts agents whose detailed status is not reported", () => {
+    const html = renderToStaticMarkup(
+      <OfficeView
+        agents={[
+          {
+            id: "main",
+            name: "Main",
+            status: "unknown",
+            usage: null,
+            children: [
+              {
+                id: "sub",
+                name: "Sub",
+                status: "unknown",
+                usage: null,
+                children: [],
+              },
+            ],
+          },
+        ]}
+        reducedMotion
+        selectedId={null}
+        onSelect={() => undefined}
+        connection="connected"
+      />,
+    );
+
+    expect(html).toContain("Unreported 2");
+    expect(html).toContain("<span>Unreported</span>");
+    expect(html).toContain('aria-label="Main, Unreported, Observation point"');
+  });
+
+  it("provides one roving tab stop with deterministic arrow navigation", () => {
+    const ids = ["main", "sub-1", "sub-2"];
+    expect(nextOfficeFocusId(ids, "main", "ArrowRight")).toBe("sub-1");
+    expect(nextOfficeFocusId(ids, "sub-1", "ArrowDown")).toBe("sub-2");
+    expect(nextOfficeFocusId(ids, "sub-2", "ArrowLeft")).toBe("sub-1");
+    expect(nextOfficeFocusId(ids, "main", "ArrowUp")).toBe("main");
+    expect(nextOfficeFocusId(ids, "sub-1", "Home")).toBe("main");
+    expect(nextOfficeFocusId(ids, "main", "End")).toBe("sub-2");
   });
 
   it("maps every status to a production pixel character", () => {
@@ -142,7 +197,7 @@ describe("Office view", () => {
     );
 
     expect(html).toContain("Codex workspace");
-    expect(html).toContain("Local sessions");
+    expect(html).toContain("1 Roots · 3 Subs");
     expect(html).not.toContain("Synthetic data");
     expect(html).not.toContain("Live office preview");
   });

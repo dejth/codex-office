@@ -24,6 +24,7 @@ const snapshot = {
   id: "snapshot-1",
   updatedAt: "2026-01-01T00:00:00.000Z",
   agents: [node()],
+  rateLimits: null,
   unresolved: [],
   connection: "connected",
 };
@@ -63,7 +64,6 @@ describe("webview protocol", () => {
       protocolVersion: V,
       sequence: 6,
       type: "settings",
-      defaultView: "office",
       reducedMotion: true,
     },
     { protocolVersion: V, sequence: 7, type: "refresh-requested" },
@@ -74,7 +74,6 @@ describe("webview protocol", () => {
   it.each([
     { protocolVersion: V, type: "ready" },
     { protocolVersion: V, type: "select-agent", agentId: "agent-1" },
-    { protocolVersion: V, type: "set-view", view: "meter" },
     { protocolVersion: V, type: "refresh" },
     { protocolVersion: V, type: "open-settings" },
   ])("accepts every webview message type", (message) => {
@@ -95,6 +94,7 @@ describe("webview protocol", () => {
       sessionId: "raw-session",
       updatedAt: snapshot.updatedAt,
       agents: fixture.expected.agents as OfficeSnapshot["agents"],
+      rateLimits: null,
       connection: "connected",
     });
     expect(projected.ok).toBe(true);
@@ -313,6 +313,7 @@ describe("webview protocol", () => {
       sessionId: `${canary}-session`,
       updatedAt: snapshot.updatedAt,
       connection: "connected",
+      rateLimits: null,
       agents: [
         {
           id: `${canary}-root`,
@@ -350,6 +351,35 @@ describe("webview protocol", () => {
     expect(JSON.stringify(result.snapshot)).not.toContain(source.sessionId!);
   });
 
+  it("projects only an explicitly bounded provider display label", () => {
+    const source: OfficeSnapshot = {
+      sessionId: "raw-session",
+      updatedAt: snapshot.updatedAt,
+      connection: "connected",
+      rateLimits: null,
+      agents: [
+        {
+          id: "raw-child",
+          parentId: null,
+          name: "raw provider name",
+          displayName: "Kepler",
+          task: "raw task",
+          status: "unknown",
+          usage: null,
+          children: [],
+        },
+      ],
+    };
+
+    const result = projectOfficeSnapshot(source);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("projection failed");
+    expect(result.snapshot.agents[0]?.name).toBe("Kepler");
+    expect(JSON.stringify(result.snapshot)).not.toContain("raw provider name");
+    expect(JSON.stringify(result.snapshot)).not.toContain("raw task");
+  });
+
   it("projects duplicate unresolved occurrences to distinct opaque IDs", () => {
     const duplicate = {
       id: "raw-duplicate",
@@ -365,6 +395,7 @@ describe("webview protocol", () => {
       sessionId: "raw-session",
       updatedAt: snapshot.updatedAt,
       connection: "connected",
+      rateLimits: null,
       agents: hierarchy.agents,
     };
     const result = projectOfficeSnapshot(
@@ -395,6 +426,7 @@ describe("webview protocol", () => {
         sessionId: "raw-session",
         updatedAt: snapshot.updatedAt,
         connection: "connected",
+        rateLimits: null,
         agents: [root],
       });
     };
@@ -408,6 +440,7 @@ describe("webview protocol", () => {
     const base = {
       sessionId: null,
       updatedAt: snapshot.updatedAt,
+      rateLimits: null,
       connection: "connected" as const,
     };
     expect(projectOfficeSnapshot({ ...base, agents: [cyclic] })).toEqual({
@@ -491,6 +524,7 @@ describe("webview protocol", () => {
       sessionId: null,
       updatedAt: snapshot.updatedAt,
       connection: "connected",
+      rateLimits: null,
       agents: [
         {
           id: duplicateId,

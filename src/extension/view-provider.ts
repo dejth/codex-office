@@ -28,7 +28,7 @@ export class CodexOfficeViewProvider
     private readonly provider: AgentProvider = new CodexProvider(
       undefined,
       undefined,
-      undefined,
+      () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       true,
     ),
   ) {}
@@ -59,7 +59,6 @@ export class CodexOfficeViewProvider
             );
             break;
           case "select-agent":
-          case "set-view":
             break;
         }
       },
@@ -220,12 +219,10 @@ export class CodexOfficeViewProvider
 
   private sendSettings(): void {
     const configuration = vscode.workspace.getConfiguration("codexOffice");
-    const configuredView = configuration.get<string>("defaultView");
     this.post({
       protocolVersion: WEBVIEW_PROTOCOL_VERSION,
       sequence: this.nextSequence(),
       type: "settings",
-      defaultView: configuredView === "meter" ? "meter" : "office",
       reducedMotion: configuration.get<boolean>("reducedMotion", false),
     });
   }

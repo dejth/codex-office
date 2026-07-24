@@ -2,37 +2,38 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { previewSnapshot } from "../../src/protocol/preview-fixture";
-import { formatTokenValue, MeterView } from "../../src/webview/meter-view";
+import { AccountOverview } from "../../src/webview/meter-view";
 
-describe("Meter view", () => {
-  it("renders honest summary, provenance, hierarchy, and missing values", () => {
+describe("compact account overview", () => {
+  it("renders reported capacity, disclaimer, and hierarchy counts", () => {
     const html = renderToStaticMarkup(
-      <MeterView
+      <AccountOverview
         agents={previewSnapshot.agents}
-        selectedId="agent_preview_3"
-        onSelect={() => undefined}
+        rateLimits={previewSnapshot.rateLimits}
       />,
     );
 
-    expect(html).toContain("Reported usage");
+    expect(html).toContain("Local Codex account");
     expect(html).toContain("Not billing data");
-    expect(html).toContain("Parent and child context may overlap");
-    expect(html).toContain("Not combined across threads");
-    expect(html).toContain("Derived");
-    expect(html).toContain("Reported");
-    expect(html).toContain("Unavailable");
-    expect(html).toContain("Cached input");
-    expect(html).toContain('aria-pressed="true"');
-    expect(html).toContain("hierarchy level 3");
+    expect(html).toContain("38% used");
+    expect(html).toContain("5-hour window");
+    expect(html).toContain("62% used");
+    expect(html).toContain("1-week window");
+    expect(html).toContain("Root sessions</dt><dd>1");
+    expect(html).toContain("Subagents</dt><dd>3");
+    expect(html).toContain("Threads</dt><dd>4");
+    expect(html).not.toContain("Reported thread tokens");
+    expect(html).not.toContain("Components");
     expect(html).not.toContain("cost estimate");
-    expect(html).not.toContain("sessionId");
   });
 
-  it("keeps unknown values distinct from zero", () => {
-    expect(formatTokenValue(null)).toBe("—");
-    expect(formatTokenValue(0)).toBe("0");
-    expect(formatTokenValue(Number.MAX_SAFE_INTEGER)).toBe(
-      "9,007,199,254,740,991",
+  it("keeps unavailable capacity distinct from zero", () => {
+    const html = renderToStaticMarkup(
+      <AccountOverview agents={[]} rateLimits={null} />,
     );
+
+    expect(html).toContain("Account capacity unavailable");
+    expect(html).not.toContain("% used");
+    expect(html).toContain("Root sessions</dt><dd>0");
   });
 });

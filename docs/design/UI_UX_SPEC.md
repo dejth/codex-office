@@ -2,22 +2,24 @@
 
 ## Information architecture
 
-One Activity Bar container contains one sidebar view with two primary modes: **Office** and **Meter**. Selecting an agent opens an Inspector within the same view. Settings use VS Code settings.
+One Activity Bar container contains one compact sidebar. Local account capacity
+and hierarchy counts appear above the animated Office. Selecting an agent stays
+within the same view. Settings use VS Code settings.
 
 ## Office
 
 - Room overview preserves hierarchy through grouping, connectors, or zones.
-- Main agent is visually primary; nested children remain traceable to parents.
+- Root sessions use a subtle blue background and readable `Main` label; all
+  characters and cards otherwise share one compact footprint.
 - Each character exposes name, status, task summary when safe, usage badge, and accessible label.
 - Dense teams collapse by branch and offer a list fallback.
 
-## Meter
+## Account overview
 
-- Header: connection, snapshot age, active/completed counts.
-- Summary: main, subagents, total reported usage.
-- Tree rows: name, status, total, expandable components.
-- Unknown/missing values use `—`, not `0`.
-- Provenance explanation is one click away.
+- Compact reported account windows show percentage, reset time, and
+  `not billing data`.
+- Summary shows root sessions, subagents, and visible thread count.
+- Per-thread values remain hidden when unavailable.
 
 ## Core states
 
@@ -29,7 +31,8 @@ Use VS Code theme tokens for chrome/text. Pixel art provides personality but mus
 
 ## Interaction
 
-Mode toggle is keyboard reachable and uses pressed state. Agent cards/rows use button semantics. Escape returns from Inspector. Refresh does not erase the last safe snapshot.
+Agent cards use button semantics and one roving tab stop. Refresh does not erase
+the last safe snapshot.
 
 ## Copy
 

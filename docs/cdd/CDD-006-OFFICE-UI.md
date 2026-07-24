@@ -1,14 +1,16 @@
 # CDD-006 — Office UI Contract
 
-Status: Implemented for provider-backed Office, state machine, and Meter
+Status: Implemented for unified provider-backed Office
 
-## Modes
+## Unified view
 
-Office and Meter share selection, filters, timestamps, and domain state. Switching modes must not reset selection or provider state.
+One sidebar renders compact account capacity and hierarchy counts above the
+filterable animated agent floor. There is no mode switch or duplicated
+hierarchy presentation.
 
 ## State-to-motion mapping
 
-Thinking: thought bubble; reading: shelf/reading pose; editing: desk typing; running command: terminal station; waiting approval: high-priority badge; completed: calm success pose; failed: non-flashing warning; idle: subtle rest; unknown: neutral question state.
+Thinking: thought bubble; reading: shelf/reading pose; editing: desk typing; running command: terminal station; waiting approval: high-priority badge; completed: calm success pose; failed: non-flashing warning; idle: subtle rest; internal unknown: neutral question state labelled `Unreported` in the UI.
 
 Animations communicate atmosphere, never the sole meaning. Text and icon labels are always available.
 
@@ -18,7 +20,18 @@ Both `codexOffice.reducedMotion` and the operating-system `prefers-reduced-motio
 
 ## Responsive behavior
 
-At narrow width, prioritize agent, status, and total. Inspector becomes an in-view drill-down. Meter uses compact rows rather than wide charts.
+At narrow width, prioritize account capacity, counts, agent identity, and
+status. Account windows use compact progress rows rather than wide charts.
+
+Provider-backed Office views render roots and subagents with the same compact
+card footprint and character size. Roots use a subtle blue-tinted background
+and a readable `Main` label. Cards reserve enough width for common agent names;
+name and reported status occupy separate lines, while compact hierarchy labels
+use `Main` and `Sub`. Readable All, Active, Waiting, Done,
+and Unreported filters reduce visual density without changing the underlying
+snapshot or selection. Unreported includes a count and means the provider found
+the agent but did not supply a detailed status. Decorative room chrome must not
+contain mock timestamps or other values that can be mistaken for provider data.
 
 ## Provider and empty states
 
@@ -39,13 +52,17 @@ At narrow width, prioritize agent, status, and total. Inspector becomes an in-vi
 - Empty-state artwork uses the same local five-frame production motion and
   reduced-motion gates as agent cards. It introduces no network requests.
 
-## Meter behavior
+## Account overview behavior
 
-- Office and Meter render the same sanitized snapshot and share selection state.
-- The summary exposes visible main-agent, subagent, and thread counts. Cross-thread totals remain unavailable when multiple cumulative thread snapshots contribute.
-- Rows expose exact hierarchy depth in their accessible names and cap visual indentation after level four for narrow layouts. Per-thread total, status, and provenance remain visible at a glance; input, cached input, and output are available in native disclosure controls.
-- Unknown values render as `—`, distinct from a reported zero.
-- A visible explanation defines reported, derived, and estimated values and warns that parent/child context may overlap.
+- The overview presents bounded primary and secondary account-capacity windows
+  above the Office when the pinned local provider reports them. Each window
+  shows percentage used, duration, reset time, and an explicit
+  `not billing data` disclaimer.
+- Account capacity is never presented as per-thread token usage, cost, credits,
+  or a cross-thread total. Missing capacity renders as unavailable.
+- The summary exposes root-session, subagent, and thread counts.
+- Per-thread token rows remain hidden while the provider reports no
+  content-free thread usage.
 
 ## Accessibility gates
 
@@ -60,8 +77,10 @@ Keyboard traversal, visible focus, appropriate headings, live-region restraint, 
 - Up/Down move through visible agents, Right moves to the first child, Left moves to the parent, Home/End move to the bounds, and Enter/Space select.
 - Every status has both an icon and readable text. Accessible names include agent, status, and usage availability.
 - At widths up to 360 px, cards stack identity/status above usage while preserving hierarchy and focus behavior.
-- Fixture selection lives above the Office/Meter branch so switching modes does not reset it.
-- The code-native Office diorama and accessible tree are parallel views of the same snapshot and selection. The tree remains available beneath the visual floor.
+- The Office diorama is the primary accessible agent control and does not
+  duplicate the full hierarchy below the room. It exposes one roving tab stop:
+  arrow keys traverse the currently visible agents, Home and End move to the
+  bounds, and Enter or Space selects through native button behavior.
 
 ## Production visual assets
 

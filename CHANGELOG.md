@@ -6,6 +6,23 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Combine reported account capacity, root/subagent/thread counts, filters, and
+  animated agents into one compact sidebar. Agent cards now share one footprint
+  and root sessions use a subtle blue background plus a readable `Main` label.
+- Compact the provider-backed shared Office, add status filters, remove mock
+  room values, and collapse the duplicate keyboard hierarchy by default.
+- Add an Unreported Office filter with a visible count for agents whose
+  detailed status is unavailable from the provider.
+- Hide empty per-thread Meter rows, technical fallback copy, and component
+  disclosures when the provider reports no token usage, while retaining compact
+  hierarchy counts.
+
+### Added
+
+- Reported account-capacity percentages and reset windows in Meter, kept
+  explicitly separate from billing, credits, cost, and per-thread token usage.
+- Version-gated persisted subagent hierarchy reconstruction with bounded
+  generated agent nicknames and no transcript or path projection.
 - Professional repository foundation, product contracts, agent workflow, and extension skeleton.
 - Version-pinned Codex App Server hierarchy and reported-token evidence baseline for v0.1 provider work.
 - Deterministic, privacy-safe Codex fixture corpus for hierarchy, malformed input, replay, resume, and usage boundaries.
@@ -30,6 +47,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Label provider-missing agent status as `Unreported` instead of the ambiguous
+  `Unknown`.
+- Keep compact Office agent names and statuses readable at narrow sidebar
+  widths.
+- Open the repository folder automatically in the isolated F5 Extension Host so
+  workspace-scoped provider and Meter previews can connect.
 - Reworked all nine Office animations around one larger, high-detail mascot
   identity with complete five-frame status actions, stable eye anchors, true
   alpha, and padded 128 × 128 frames rendered at up to 192 CSS pixels.

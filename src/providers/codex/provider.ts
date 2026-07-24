@@ -4,7 +4,12 @@ import {
   buildAgentHierarchy,
   type HierarchyAgent,
 } from "../../domain/hierarchy";
-import type { AgentStatus, OfficeSnapshot } from "../../domain/model";
+import type {
+  AccountRateLimits,
+  AgentStatus,
+  OfficeSnapshot,
+  RateLimitWindow,
+} from "../../domain/model";
 import { negotiateCodexCapabilities } from "./capabilities";
 import {
   CodexStdioTransport,
@@ -37,23 +42,31 @@ export class CodexProvider implements AgentProvider {
   private current = emptySnapshot("disconnected");
   private generation = 0;
   private currentDiagnostic: ProviderDiagnostic = "none";
+  private rateLimits: AccountRateLimits | null = null;
+  private rateLimitsReadAt: number | null = null;
+  private activeWorkspaceCwd: string | undefined;
 
   constructor(
     private readonly createTransport: () => CodexRpcTransport = () =>
       new CodexStdioTransport(),
     private readonly now: () => Date = () => new Date(),
-    private readonly workspaceCwd?: string,
+    private readonly workspaceCwd?: string | (() => string | undefined),
     private readonly requireWorkspace = false,
   ) {}
 
   async connect(): Promise<void> {
     if (this.transport !== undefined) return;
-    if (this.requireWorkspace && this.workspaceCwd === undefined) {
+    const workspaceCwd =
+      typeof this.workspaceCwd === "function"
+        ? this.workspaceCwd()
+        : this.workspaceCwd;
+    if (this.requireWorkspace && workspaceCwd === undefined) {
       this.connected = false;
       this.currentDiagnostic = "workspace-required";
       this.current = emptySnapshot("disconnected");
       return;
     }
+    this.activeWorkspaceCwd = workspaceCwd;
     const transport = this.createTransport();
     const generation = ++this.generation;
     this.transport = transport;
@@ -108,7 +121,14 @@ export class CodexProvider implements AgentProvider {
     this.transport = undefined;
     this.polling = undefined;
     this.listeners.clear();
-    this.current = { ...this.current, connection: "disconnected" };
+    this.rateLimits = null;
+    this.rateLimitsReadAt = null;
+    this.activeWorkspaceCwd = undefined;
+    this.current = {
+      ...this.current,
+      rateLimits: null,
+      connection: "disconnected",
+    };
   }
 
   async snapshot(): Promise<OfficeSnapshot> {
@@ -144,7 +164,12 @@ export class CodexProvider implements AgentProvider {
     if (!this.connected || transport === undefined)
       return cloneSnapshot(this.current);
     try {
-      const threads = await listPersistedThreads(transport, this.workspaceCwd);
+      const threads = await listPersistedThreads(
+        transport,
+        this.activeWorkspaceCwd,
+      );
+      const observedAt = this.now();
+      await this.refreshRateLimitsWhenDue(transport, observedAt);
       const hierarchy = buildAgentHierarchy(toHierarchyAgents(threads));
       if (
         generation !== this.generation ||
@@ -156,8 +181,9 @@ export class CodexProvider implements AgentProvider {
       const next: OfficeSnapshot = {
         sessionId:
           sessions.size === 1 ? (sessions.values().next().value ?? null) : null,
-        updatedAt: this.now().toISOString(),
+        updatedAt: observedAt.toISOString(),
         agents: hierarchy.agents,
+        rateLimits: this.rateLimits,
         connection:
           hierarchy.unresolved.length === 0 ? "connected" : "degraded",
       };
@@ -187,6 +213,28 @@ export class CodexProvider implements AgentProvider {
   private emit(snapshot: OfficeSnapshot): void {
     for (const listener of this.listeners) listener(cloneSnapshot(snapshot));
   }
+
+  private async refreshRateLimitsWhenDue(
+    transport: CodexRpcTransport,
+    observedAt: Date,
+  ): Promise<void> {
+    const observedAtMs = observedAt.getTime();
+    if (
+      this.rateLimitsReadAt !== null &&
+      observedAtMs - this.rateLimitsReadAt < 60_000
+    ) {
+      return;
+    }
+    this.rateLimitsReadAt = observedAtMs;
+    try {
+      const parsed = accountRateLimitsResponseSchema.safeParse(
+        await transport.request("account/rateLimits/read", {}),
+      );
+      if (parsed.success) this.rateLimits = toAccountRateLimits(parsed.data);
+    } catch {
+      // Hierarchy remains available when optional account capacity is not.
+    }
+  }
 }
 
 const id = z.string().min(1).max(512);
@@ -204,11 +252,54 @@ const threadStatusSchema = z.discriminatedUnion("type", [
     })
     .strip(),
 ]);
+const safeAgentLabel = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine((value) => {
+    for (const character of value) {
+      const point = character.codePointAt(0)!;
+      if (point <= 0x1f || (point >= 0x7f && point <= 0x9f)) return false;
+    }
+    return true;
+  });
+const threadSpawnSourceSchema = z
+  .object({
+    subAgent: z
+      .object({
+        thread_spawn: z
+          .object({
+            parent_thread_id: id,
+            depth: z.number().int().min(1).max(32),
+            agent_nickname: safeAgentLabel.nullable(),
+            agent_role: safeAgentLabel.nullable(),
+          })
+          .strip(),
+      })
+      .strip(),
+  })
+  .strip();
+const sessionSourceSchema = z.union([
+  z.enum(["cli", "vscode", "exec", "appServer", "unknown"]),
+  z.object({ custom: z.string().max(128) }).strip(),
+  z
+    .object({ subAgent: z.enum(["review", "compact", "memory_consolidation"]) })
+    .strip(),
+  z
+    .object({
+      subAgent: z.object({ other: z.string().max(128) }).strip(),
+    })
+    .strip(),
+  threadSpawnSourceSchema,
+]);
 const threadListItemSchema = z
   .object({
     id,
     sessionId: id,
     parentThreadId: id.nullable().optional().default(null),
+    source: sessionSourceSchema.optional().default("unknown"),
+    agentNickname: safeAgentLabel.nullable().optional().default(null),
+    agentRole: safeAgentLabel.nullable().optional().default(null),
     createdAt: z.number().int().nonnegative().safe(),
     status: threadStatusSchema,
   })
@@ -217,6 +308,24 @@ const threadListSchema = z
   .object({
     data: z.array(threadListItemSchema).max(1_000),
     nextCursor: cursor.nullable().optional().default(null),
+  })
+  .strip();
+const rateLimitWindowSchema = z
+  .object({
+    usedPercent: z.number().finite().min(0).max(100),
+    windowDurationMins: z.number().int().positive().safe().nullable(),
+    resetsAt: z.number().int().nonnegative().safe().nullable(),
+  })
+  .strip();
+const rateLimitSnapshotSchema = z
+  .object({
+    primary: rateLimitWindowSchema.nullable(),
+    secondary: rateLimitWindowSchema.nullable(),
+  })
+  .strip();
+const accountRateLimitsResponseSchema = z
+  .object({
+    rateLimits: rateLimitSnapshotSchema,
   })
   .strip();
 type SafeThread = z.infer<typeof threadListItemSchema>;
@@ -271,6 +380,9 @@ function sameSafeThread(left: SafeThread, right: SafeThread): boolean {
     left.id === right.id &&
     left.sessionId === right.sessionId &&
     left.parentThreadId === right.parentThreadId &&
+    JSON.stringify(left.source) === JSON.stringify(right.source) &&
+    left.agentNickname === right.agentNickname &&
+    left.agentRole === right.agentRole &&
     left.createdAt === right.createdAt &&
     JSON.stringify(left.status) === JSON.stringify(right.status)
   );
@@ -288,20 +400,48 @@ function toHierarchyAgents(threads: readonly SafeThread[]): HierarchyAgent[] {
     );
   }
   return threads.map((thread) => {
+    const sourceParentId = getThreadSpawnMetadata(thread)?.parent_thread_id;
+    const parentId = thread.parentThreadId ?? sourceParentId ?? null;
     const parentSession =
-      thread.parentThreadId === null
-        ? thread.sessionId
-        : uniqueSessionById.get(thread.parentThreadId);
+      parentId === null ? thread.sessionId : uniqueSessionById.get(parentId);
+    const usesVersionedSpawnFallback =
+      thread.parentThreadId === null && sourceParentId !== undefined;
+    const spawn = getThreadSpawnMetadata(thread);
+    const displayName =
+      thread.agentNickname ??
+      spawn?.agent_nickname ??
+      thread.agentRole ??
+      spawn?.agent_role;
     return {
       id: thread.id,
-      parentId: parentSession === thread.sessionId ? thread.parentThreadId : "",
+      parentId:
+        parentId === null
+          ? null
+          : usesVersionedSpawnFallback || parentSession === thread.sessionId
+            ? parentId
+            : "",
       name: "Codex agent",
+      ...(displayName === null || displayName === undefined
+        ? {}
+        : { displayName }),
       task: null,
       status: toAgentStatus(thread.status),
       usage: null,
       startedAt: secondsToCanonicalUtc(thread.createdAt),
     };
   });
+}
+
+function getThreadSpawnMetadata(thread: SafeThread):
+  | {
+      parent_thread_id: string;
+      depth: number;
+      agent_nickname: string | null;
+      agent_role: string | null;
+    }
+  | undefined {
+  const parsed = threadSpawnSourceSchema.safeParse(thread.source);
+  return parsed.success ? parsed.data.subAgent.thread_spawn : undefined;
 }
 
 function toAgentStatus(status: SafeThread["status"]): AgentStatus {
@@ -324,6 +464,28 @@ function secondsToCanonicalUtc(seconds: number): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function toAccountRateLimits(
+  response: z.infer<typeof accountRateLimitsResponseSchema>,
+): AccountRateLimits {
+  return {
+    primary: toRateLimitWindow(response.rateLimits.primary),
+    secondary: toRateLimitWindow(response.rateLimits.secondary),
+    provenance: "reported",
+  };
+}
+
+function toRateLimitWindow(
+  window: z.infer<typeof rateLimitWindowSchema> | null,
+): RateLimitWindow | null {
+  if (window === null) return null;
+  return {
+    usedPercent: window.usedPercent,
+    windowDurationMinutes: window.windowDurationMins,
+    resetsAt:
+      window.resetsAt === null ? null : secondsToCanonicalUtc(window.resetsAt),
+  };
+}
+
 function emptySnapshot(
   connection: OfficeSnapshot["connection"],
 ): OfficeSnapshot {
@@ -331,6 +493,7 @@ function emptySnapshot(
     sessionId: null,
     updatedAt: new Date(0).toISOString(),
     agents: [],
+    rateLimits: null,
     connection,
   };
 }

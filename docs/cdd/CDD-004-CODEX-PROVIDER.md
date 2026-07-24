@@ -1,8 +1,9 @@
 # CDD-004 — Codex Provider Contract
 
-Status: Snapshot-polling integration implemented for Codex CLI 0.138.0
+Status: Verified metadata and account-capacity polling for Codex CLI 0.138.0
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
+and [ADR-0004](../decisions/ADR-0004-STATE-DB-SPAWN-AND-ACCOUNT-CAPACITY.md).
 
 ## Strategy
 
@@ -30,9 +31,13 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 - Runtime fingerprints are accepted only with the verified `Codex Desktop/`
   or Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
   other prefixes degrade without exposing the raw fingerprint.
-- The implemented mode is partial `snapshot-polling` using `initialize` and `thread/list` with `useStateDbOnly: true`.
+- The implemented mode is partial `snapshot-polling` using `initialize`,
+  `thread/list` with `useStateDbOnly: true`, and the bounded
+  `account/rateLimits/read` projection.
 - Required notification names are pinned schema evidence, not proof of observation or subscription.
-- The capability result reports `hierarchyPolling: true`, `usage: false`, and `liveUpdates: false`; it never describes the overall adapter as fully supported.
+- The capability result reports `hierarchyPolling: true`,
+  `accountRateLimits: true`, `usage: false`, and `liveUpdates: false`; it never
+  describes the overall adapter as fully supported.
 - Experimental API remains disabled. A privacy-reviewed usage/live attachment contract is required before those capabilities can be enabled.
 - Capability diagnostics are bounded and content-free. Raw fingerprints, `codexHome`, paths, prompts, and server payloads are never retained.
 
@@ -51,12 +56,27 @@ on the upstream default would silently exclude subagents. Strict boundary
 schemas retain only hierarchy identity, timestamp, and status; previews, names,
 turns, paths, Git metadata, and raw provider payloads are discarded.
 
+State-database subagent rows on the pinned version can omit canonical
+`parentThreadId` while retaining
+`source.subAgent.thread_spawn.parent_thread_id`. The adapter accepts that
+versioned structural fallback through a strict schema, strips `agent_path` and
+role, and exposes only a bounded generated agent nickname. Missing or invalid
+parents remain unresolved rather than being promoted to roots.
+
 Persisted sessions owned by another process are reported as `notLoaded` and map
 to the conservative `unknown` state. The extension cannot attach to a separate
 Codex stdio process, so it never presents those states as live. Cross-process
 attachment, private IPC, rollout scanning, and content-bearing resume remain
 out of scope without an accepted privacy ADR. An empty state-database result is
 authoritative, not an error.
+
+Generated notification schemas do not change this boundary. Lifecycle and
+token notifications are scoped to the owning App Server transport. The
+official VS Code Codex extension and Codex Office currently launch separate
+private-stdio App Server processes, and the official extension exposes no
+documented shared endpoint configuration. Until an official read-only
+cross-client subscription exists, provider-backed Office status remains
+inventory provenance rather than live lifecycle state.
 
 The production extension requires an open workspace before connecting. With no
 workspace it does not start App Server or request global persisted sessions;
