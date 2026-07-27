@@ -32,11 +32,21 @@ Provider-backed Office views render roots and subagents with the same compact
 card footprint and character size. Roots use a subtle blue-tinted background
 and a readable `Main` label. Cards reserve enough width for common agent names;
 name and reported status occupy separate lines, while compact hierarchy labels
-use `Main` and `Sub`. Readable All, Active, Waiting, Done,
-and Unreported filters reduce visual density without changing the underlying
-snapshot or selection. Unreported includes a count and means the provider found
-the agent but did not supply a detailed status. Decorative room chrome must not
-contain mock timestamps or other values that can be mistaken for provider data.
+use `Root` and `Sub`. Readable All, Working, Waiting, Failed, Idle, and
+Unreported filters reduce visual density without changing the underlying
+snapshot or selection. `Idle` means the observer reports no current work; it
+does not claim that a task or session is permanently complete. Unreported
+includes a count and means the provider found the agent but did not supply a
+detailed status. Its repeated card copy may be visually hidden while remaining
+in the accessible name. Decorative room chrome must not contain mock timestamps
+or other values that can be mistaken for provider data.
+
+When at least six agents belong to root groups containing only Unreported
+statuses, All collapses those complete groups behind an accessible
+`Other sessions` disclosure. Working, waiting, failed, idle, completed, and
+mixed-status hierarchy groups remain visible. Choosing the Unreported filter
+shows matching complete groups directly. The disclosure never changes the
+snapshot and never detaches a child from its root.
 
 The room ranks intact parent/subagent groups by reported relevance: active
 states first, attention states next, inactive states after them, and Unreported
@@ -44,6 +54,11 @@ last. Within the same class, the newest canonical `lastActivityAt` comes first;
 stable opaque ID breaks ties. A descendant can promote its whole group, but the
 parent remains before its children. Missing activity time sorts last within its
 class and is never estimated.
+
+Agent cards use an overlaid Root/Sub badge, compact caption spacing, and a
+consistent minimum footprint. Long rooms use CSS content visibility to defer
+off-screen paint without changing DOM order, focus order, or screen-reader
+content.
 
 Status filters apply to complete root groups rather than bypassing roots. A
 group remains visible when its root or any descendant matches, preserving the

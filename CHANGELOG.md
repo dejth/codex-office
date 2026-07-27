@@ -6,6 +6,10 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Rework the live Agent room around Working, Waiting, Failed, Idle, and
+  Unreported semantics; compact repeated card chrome and collapse large
+  Unreported-only groups behind an accessible `Other sessions` summary.
+
 - Document the Codex 0.145.0 boundary that keeps per-agent token usage hidden
   from independent shared observers until an official content-free read or
   subscription API is available.
