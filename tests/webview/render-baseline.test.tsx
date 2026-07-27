@@ -25,7 +25,7 @@ describe("deterministic composed-view baselines", () => {
       />,
     );
     expect(digest(markup)).toBe(
-      "e3a842722118eb9b794ac498afceaa9e26d38ddc27f0940ffdadf87e3cc528dc",
+      "0ad89fd4e91dd5ba1a1c48e1267a1789b8cb2d88f4c5d4010f4f665fa955e3d8",
     );
   });
 

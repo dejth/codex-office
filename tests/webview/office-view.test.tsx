@@ -23,7 +23,7 @@ const allStatuses: WebviewAgent["status"][] = [
 ];
 
 describe("Office view", () => {
-  it("filters root-only Unreported sessions out of Active", () => {
+  it("filters root-only Unreported sessions out of Working", () => {
     const unreportedRoots: WebviewAgent[] = ["root-1", "root-2"].map((id) => ({
       id,
       name: id,
@@ -33,7 +33,7 @@ describe("Office view", () => {
       children: [],
     }));
 
-    expect(filterOfficeAgentGroups(unreportedRoots, "active")).toEqual([]);
+    expect(filterOfficeAgentGroups(unreportedRoots, "working")).toEqual([]);
     expect(filterOfficeAgentGroups(unreportedRoots, "unreported")).toEqual(
       unreportedRoots,
     );
@@ -57,7 +57,7 @@ describe("Office view", () => {
       children: [activeChild],
     };
 
-    expect(filterOfficeAgentGroups([root], "active")).toEqual([root]);
+    expect(filterOfficeAgentGroups([root], "working")).toEqual([root]);
   });
 
   it("orders active groups first and reported activity newest first", () => {
@@ -141,7 +141,7 @@ describe("Office view", () => {
     expect(html).toContain('data-motion="typing-loop"');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("1 Roots · 3 Subs");
-    expect(html).toContain("4 in room");
+    expect(html).toContain("4 shown · 4 sessions");
     expect(html).toContain("Shared observer");
     expect(html).toContain('aria-label="Filter agents"');
     expect(html).toContain("Unreported 0");
@@ -185,8 +185,35 @@ describe("Office view", () => {
     );
 
     expect(html).toContain("Unreported 2");
-    expect(html).toContain("<span>Unreported</span>");
+    expect(html).toContain('<span class="sr-only">Unreported</span>');
     expect(html).toContain('aria-label="Main, Unreported, Observation point"');
+  });
+
+  it("collapses large Unreported-only groups behind an accessible summary", () => {
+    const agents = Array.from({ length: 7 }, (_, index): WebviewAgent => ({
+      id: `unreported-${index}`,
+      name: `Agent ${index}`,
+      status: "unknown",
+      lastActivityAt: null,
+      usage: null,
+      children: [],
+    }));
+    const html = renderToStaticMarkup(
+      <OfficeView
+        agents={agents}
+        reducedMotion
+        selectedId={null}
+        onSelect={() => undefined}
+        connection="connected"
+        statusSource="shared-observer"
+      />,
+    );
+
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain("Other sessions");
+    expect(html).toContain("7 Unreported · Show");
+    expect(html).toContain("0 shown · 7 sessions");
+    expect(html).not.toContain('class="office-station"');
   });
 
   it("provides one roving tab stop with deterministic arrow navigation", () => {
