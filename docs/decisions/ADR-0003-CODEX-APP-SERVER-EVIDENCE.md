@@ -72,6 +72,30 @@ reports only partial capability: `hierarchyPolling: true`, `usage: false`, and
 
 Enabling usage or live attachment requires a separate accepted protocol/privacy decision and tests proving that session content is not unnecessarily ingested. Neither may be enabled as an implicit fallback.
 
+### Codex 0.145.0 usage follow-up
+
+A 2026-07-27 follow-up regenerated the stable TypeScript schema with Codex CLI
+0.145.0 and compared it with the official
+[`rust-v0.145.0`](https://github.com/openai/codex/tree/rust-v0.145.0) source.
+The schema still exposes `thread/tokenUsage/updated`; each `total` and `last`
+breakdown contains total, input, cached-input, cache-write-input, output, and
+reasoning-output tokens. The stable ClientRequest union has no standalone
+per-thread token-usage read or subscribe request, and `thread/read` does not
+return cumulative usage.
+
+The upstream [thread-scoped outgoing sender](https://github.com/openai/codex/blob/rust-v0.145.0/codex-rs/app-server/src/outgoing_message.rs)
+delivers notifications only to the thread's subscribed connection IDs. The
+[token usage replay path](https://github.com/openai/codex/blob/rust-v0.145.0/codex-rs/app-server/src/request_processors/token_usage_replay.rs)
+likewise sends restored usage only to the connection that attached to the
+thread. `thread/start`, `thread/fork`, and `thread/resume` attach the requesting
+connection; they are not passive observation operations.
+
+Therefore an independent metadata-only shared observer cannot safely obtain
+the token summary printed by an exiting CLI session. Codex Office keeps
+`usage: false` and will not parse terminal output or rollout files. This can be
+revisited when an official content-free read or subscription method becomes
+available without attaching to the thread.
+
 ## Sanitized evidence
 
 [`tests/fixtures/codex/app-server-0.138.0-hierarchy-usage.json`](../../tests/fixtures/codex/app-server-0.138.0-hierarchy-usage.json) is a synthetic projection of the verified fields. It contains invented identifiers and counts, no user content, no rollout records, and no filesystem paths.
