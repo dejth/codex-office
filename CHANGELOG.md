@@ -55,6 +55,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Apply Office status filters to root sessions and show a clear empty state
+  when no complete agent group matches.
 - Fall back to the private workspace snapshot provider when the experimental
   shared transport cannot connect, preserving inventory and account capacity
   instead of rendering an empty unavailable Office.

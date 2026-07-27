@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { previewSnapshot } from "../../src/protocol/preview-fixture";
 import type { WebviewAgent } from "../../src/protocol/webview";
 import {
+  filterOfficeAgentGroups,
   nextOfficeFocusId,
   OfficeView,
   orderOfficeAgents,
@@ -22,6 +23,43 @@ const allStatuses: WebviewAgent["status"][] = [
 ];
 
 describe("Office view", () => {
+  it("filters root-only Unreported sessions out of Active", () => {
+    const unreportedRoots: WebviewAgent[] = ["root-1", "root-2"].map((id) => ({
+      id,
+      name: id,
+      status: "unknown",
+      lastActivityAt: "2026-01-01T00:00:00.000Z",
+      usage: null,
+      children: [],
+    }));
+
+    expect(filterOfficeAgentGroups(unreportedRoots, "active")).toEqual([]);
+    expect(filterOfficeAgentGroups(unreportedRoots, "unreported")).toEqual(
+      unreportedRoots,
+    );
+  });
+
+  it("retains a complete root group when one descendant matches", () => {
+    const activeChild: WebviewAgent = {
+      id: "active-child",
+      name: "Active child",
+      status: "editing",
+      lastActivityAt: "2026-01-01T01:00:00.000Z",
+      usage: null,
+      children: [],
+    };
+    const root: WebviewAgent = {
+      id: "unreported-root",
+      name: "Root",
+      status: "unknown",
+      lastActivityAt: null,
+      usage: null,
+      children: [activeChild],
+    };
+
+    expect(filterOfficeAgentGroups([root], "active")).toEqual([root]);
+  });
+
   it("orders active groups first and reported activity newest first", () => {
     const makeAgent = (
       id: string,
@@ -164,6 +202,7 @@ describe("Office view", () => {
       id: `agent_${index}`,
       name: `Agent ${index}`,
       status,
+      lastActivityAt: null,
       usage: null,
       children: [],
     }));

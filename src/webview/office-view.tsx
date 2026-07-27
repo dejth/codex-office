@@ -78,6 +78,25 @@ function matchesOfficeFilter(
   );
 }
 
+function subtreeMatchesFilter(
+  agent: WebviewAgent,
+  filter: OfficeFilter,
+): boolean {
+  return (
+    matchesOfficeFilter(agent.status, filter) ||
+    agent.children.some((child) => subtreeMatchesFilter(child, filter))
+  );
+}
+
+/** Keeps complete root groups only when the root or a descendant matches. */
+export function filterOfficeAgentGroups(
+  agents: readonly WebviewAgent[],
+  filter: OfficeFilter,
+): WebviewAgent[] {
+  if (filter === "all") return [...agents];
+  return agents.filter((agent) => subtreeMatchesFilter(agent, filter));
+}
+
 export function nextOfficeFocusId(
   ids: readonly string[],
   currentId: string,
@@ -185,12 +204,8 @@ export const OfficeView = memo(function OfficeView({
   const positioned = useMemo(() => flattenOfficeAgents(agents), [agents]);
   const [filter, setFilter] = useState<OfficeFilter>("all");
   const visible = useMemo(
-    () =>
-      positioned.filter(
-        ({ agent, level }) =>
-          level === 1 || matchesOfficeFilter(agent.status, filter),
-      ),
-    [filter, positioned],
+    () => flattenOfficeAgents(filterOfficeAgentGroups(agents, filter)),
+    [agents, filter],
   );
   const visibleIds = useMemo(
     () => visible.map(({ agent }) => agent.id),
@@ -203,6 +218,7 @@ export const OfficeView = memo(function OfficeView({
       ? selectedId
       : (visibleIds[0] ?? null);
   const isEmpty = positioned.length === 0;
+  const isFilterEmpty = !isEmpty && visible.length === 0;
   const subagentCount = Math.max(positioned.length - agents.length, 0);
   const unreportedCount = positioned.filter(
     ({ agent }) => agent.status === "unknown",
@@ -261,6 +277,14 @@ export const OfficeView = memo(function OfficeView({
           connection={connection}
           reducedMotion={reducedMotion}
         />
+      ) : isFilterEmpty ? (
+        <div className="office-filter-empty" role="status">
+          <h2>
+            No {FILTERS.find(({ id }) => id === filter)?.label.toLowerCase()}{" "}
+            agents
+          </h2>
+          <p>Try another status filter to see this workspace’s sessions.</p>
+        </div>
       ) : (
         <div
           className="office-room"
