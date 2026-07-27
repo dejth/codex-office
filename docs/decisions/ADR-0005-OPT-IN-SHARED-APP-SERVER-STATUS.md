@@ -70,7 +70,9 @@ default production dependency.
   details require subscription-scoped turn/item events and are outside this
   observer contract.
 - Do not claim per-thread token usage. The accepted observer flow does not
-  provide it.
+  provide it. Codex 0.145.0 routes usage notifications and replay only to
+  connections subscribed or attached to the thread; the observer must not
+  attach merely to obtain usage.
 
 ## Consequences
 
