@@ -27,6 +27,7 @@ const snapshot = {
   updatedAt: "2026-01-01T00:00:00.000Z",
   agents: [node()],
   rateLimits: null,
+  statusSource: "persisted-inventory",
   unresolved: [],
   connection: "connected",
 };
@@ -97,6 +98,7 @@ describe("webview protocol", () => {
       updatedAt: snapshot.updatedAt,
       agents: fixture.expected.agents as OfficeSnapshot["agents"],
       rateLimits: null,
+      statusSource: "persisted-inventory",
       connection: "connected",
     });
     expect(projected.ok).toBe(true);
@@ -112,7 +114,7 @@ describe("webview protocol", () => {
 
   it("returns content-free failures for version, type, and malformed fields", () => {
     expect(
-      parseWebviewToHostMessage({ protocolVersion: 3, type: "ready" }),
+      parseWebviewToHostMessage({ protocolVersion: 4, type: "ready" }),
     ).toEqual({
       ok: false,
       reason: "unsupported-version",
@@ -204,6 +206,16 @@ describe("webview protocol", () => {
       sequence: 1,
       type: "snapshot",
       snapshot: { ...snapshot, updatedAt: "2026-01-01T00:00:00" },
+    });
+    expect(result).toEqual({ ok: false, reason: "invalid-message" });
+  });
+
+  it("rejects unknown agent status sources", () => {
+    const result = parseHostToWebviewMessage({
+      protocolVersion: V,
+      sequence: 1,
+      type: "snapshot",
+      snapshot: { ...snapshot, statusSource: "guessed-live-source" },
     });
     expect(result).toEqual({ ok: false, reason: "invalid-message" });
   });
@@ -316,6 +328,7 @@ describe("webview protocol", () => {
       updatedAt: snapshot.updatedAt,
       connection: "connected",
       rateLimits: null,
+      statusSource: "persisted-inventory",
       agents: [
         {
           id: `${canary}-root`,
@@ -361,6 +374,7 @@ describe("webview protocol", () => {
       updatedAt: snapshot.updatedAt,
       connection: "connected",
       rateLimits: null,
+      statusSource: "persisted-inventory",
       agents: [
         {
           id: "raw-child",
@@ -402,6 +416,7 @@ describe("webview protocol", () => {
       updatedAt: snapshot.updatedAt,
       connection: "connected",
       rateLimits: null,
+      statusSource: "persisted-inventory",
       agents: hierarchy.agents,
     };
     const result = projectOfficeSnapshot(
@@ -433,6 +448,7 @@ describe("webview protocol", () => {
         updatedAt: snapshot.updatedAt,
         connection: "connected",
         rateLimits: null,
+        statusSource: "persisted-inventory",
         agents: [root],
       });
     };
@@ -447,6 +463,7 @@ describe("webview protocol", () => {
       sessionId: null,
       updatedAt: snapshot.updatedAt,
       rateLimits: null,
+      statusSource: "persisted-inventory" as const,
       connection: "connected" as const,
     };
     expect(projectOfficeSnapshot({ ...base, agents: [cyclic] })).toEqual({
@@ -531,6 +548,7 @@ describe("webview protocol", () => {
       updatedAt: snapshot.updatedAt,
       connection: "connected",
       rateLimits: null,
+      statusSource: "persisted-inventory",
       agents: [
         {
           id: duplicateId,

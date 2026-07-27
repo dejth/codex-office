@@ -5,6 +5,7 @@ export const previewSnapshot: WebviewSnapshot = {
   id: "snapshot_preview",
   updatedAt: "2026-01-01T00:00:00.000Z",
   connection: "disconnected",
+  statusSource: null,
   rateLimits: {
     primary: {
       usedPercent: 38,
