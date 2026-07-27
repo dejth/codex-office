@@ -52,13 +52,17 @@ interface ActivityRank {
   timestamp: number;
 }
 
-type OfficeFilter = "all" | "active" | "waiting" | "done" | "unreported";
+type OfficeFilter =
+  "all" | "working" | "waiting" | "failed" | "idle" | "unreported";
+
+const UNREPORTED_COLLAPSE_THRESHOLD = 6;
 
 const FILTERS: ReadonlyArray<{ id: OfficeFilter; label: string }> = [
   { id: "all", label: "All" },
-  { id: "active", label: "Active" },
+  { id: "working", label: "Working" },
   { id: "waiting", label: "Waiting" },
-  { id: "done", label: "Done" },
+  { id: "failed", label: "Failed" },
+  { id: "idle", label: "Idle" },
   { id: "unreported", label: "Unreported" },
 ];
 
@@ -69,13 +73,20 @@ function matchesOfficeFilter(
   if (filter === "all") return true;
   if (filter === "unreported") return status === "unknown";
   if (filter === "waiting") return status === "waiting-approval";
-  if (filter === "done")
-    return status === "completed" || status === "failed" || status === "idle";
+  if (filter === "failed") return status === "failed";
+  if (filter === "idle") return status === "idle";
   return (
     status === "thinking" ||
     status === "reading" ||
     status === "editing" ||
     status === "running-command"
+  );
+}
+
+function subtreeHasReportedStatus(agent: WebviewAgent): boolean {
+  return (
+    agent.status !== "unknown" ||
+    agent.children.some((child) => subtreeHasReportedStatus(child))
   );
 }
 
@@ -205,10 +216,39 @@ export const OfficeView = memo(function OfficeView({
 }: OfficeViewProps): React.JSX.Element {
   const positioned = useMemo(() => flattenOfficeAgents(agents), [agents]);
   const [filter, setFilter] = useState<OfficeFilter>("all");
-  const visible = useMemo(
-    () => flattenOfficeAgents(filterOfficeAgentGroups(agents, filter)),
-    [agents, filter],
-  );
+  const [showOtherSessions, setShowOtherSessions] = useState(false);
+  const { reportedGroups, unreportedOnlyGroups, unreportedOnlyCount } =
+    useMemo(() => {
+      const reportedGroups: WebviewAgent[] = [];
+      const unreportedOnlyGroups: WebviewAgent[] = [];
+      let unreportedOnlyCount = 0;
+      for (const agent of agents) {
+        if (subtreeHasReportedStatus(agent)) reportedGroups.push(agent);
+        else {
+          unreportedOnlyGroups.push(agent);
+          unreportedOnlyCount += flattenOfficeAgents([agent]).length;
+        }
+      }
+      return { reportedGroups, unreportedOnlyGroups, unreportedOnlyCount };
+    }, [agents]);
+  const collapseOtherSessions =
+    unreportedOnlyCount >= UNREPORTED_COLLAPSE_THRESHOLD;
+  const visible = useMemo(() => {
+    if (filter !== "all")
+      return flattenOfficeAgents(filterOfficeAgentGroups(agents, filter));
+    const groups =
+      collapseOtherSessions && !showOtherSessions
+        ? reportedGroups
+        : [...reportedGroups, ...unreportedOnlyGroups];
+    return flattenOfficeAgents(groups);
+  }, [
+    agents,
+    collapseOtherSessions,
+    filter,
+    reportedGroups,
+    showOtherSessions,
+    unreportedOnlyGroups,
+  ]);
   const visibleIds = useMemo(
     () => visible.map(({ agent }) => agent.id),
     [visible],
@@ -220,7 +260,7 @@ export const OfficeView = memo(function OfficeView({
       ? selectedId
       : (visibleIds[0] ?? null);
   const isEmpty = positioned.length === 0;
-  const isFilterEmpty = !isEmpty && visible.length === 0;
+  const isFilterEmpty = filter !== "all" && !isEmpty && visible.length === 0;
   const subagentCount = Math.max(positioned.length - agents.length, 0);
   const unreportedCount = positioned.filter(
     ({ agent }) => agent.status === "unknown",
@@ -265,8 +305,7 @@ export const OfficeView = memo(function OfficeView({
         </div>
       </div>
       <p className="view-summary">
-        Sessions appear at deterministic stations using status reported by the
-        local Codex provider.
+        Live status reported by the local Codex provider.
       </p>
       {isEmpty ? null : (
         <div className="office-filters" aria-label="Filter agents">
@@ -304,7 +343,9 @@ export const OfficeView = memo(function OfficeView({
         >
           <div className="office-wall" aria-hidden="true">
             <span className="office-mark" />
-            <span>{visible.length} in room</span>
+            <span>
+              {visible.length} shown · {positioned.length} sessions
+            </span>
           </div>
           <div className="office-floor">
             {visible.map(({ agent, level }) => (
@@ -318,9 +359,26 @@ export const OfficeView = memo(function OfficeView({
                 onFocus={setFocusedId}
                 onMoveFocus={moveFocus}
                 onSelect={onSelect}
+                showStatus={
+                  agent.status !== "unknown" || filter === "unreported"
+                }
               />
             ))}
           </div>
+          {filter === "all" && collapseOtherSessions ? (
+            <button
+              className="other-sessions-toggle"
+              type="button"
+              aria-expanded={showOtherSessions}
+              onClick={() => setShowOtherSessions((current) => !current)}
+            >
+              <span>Other sessions</span>
+              <span>
+                {unreportedOnlyCount} Unreported ·{" "}
+                {showOtherSessions ? "Hide" : "Show"}
+              </span>
+            </button>
+          ) : null}
         </div>
       )}
     </section>
@@ -380,6 +438,7 @@ interface OfficeAgentProps {
   onFocus(id: string): void;
   onMoveFocus(id: string, key: string): void;
   onSelect(id: string): void;
+  showStatus: boolean;
 }
 
 const OfficeAgent = memo(function OfficeAgent({
@@ -391,6 +450,7 @@ const OfficeAgent = memo(function OfficeAgent({
   onFocus,
   onMoveFocus,
   onSelect,
+  showStatus,
 }: OfficeAgentProps): React.JSX.Element {
   const [animation, setAnimation] = useState<OfficeAnimationState>(() =>
     createOfficeAnimationState(agent.status, reducedMotion),
@@ -455,7 +515,9 @@ const OfficeAgent = memo(function OfficeAgent({
       </span>
       <span className="station-caption">
         <strong>{agent.name}</strong>
-        <span>{statusLabel}</span>
+        <span className={showStatus ? undefined : "sr-only"}>
+          {statusLabel}
+        </span>
       </span>
     </button>
   );
