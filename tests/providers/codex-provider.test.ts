@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { OfficeSnapshot } from "../../src/domain/model";
 import { CodexProvider } from "../../src/providers/codex/provider";
 import {
   CodexTransportError,
@@ -365,6 +366,8 @@ describe("CodexProvider", () => {
     expect((await provider.snapshot()).statusSource).toBe(
       "persisted-inventory",
     );
+    const emitted: OfficeSnapshot[] = [];
+    provider.subscribe((snapshot) => emitted.push(snapshot));
 
     now = new Date(NOW.getTime() + 10_001);
     const recovered = await provider.refresh();
@@ -372,6 +375,12 @@ describe("CodexProvider", () => {
     expect(fallback.stopped).toBeGreaterThan(0);
     expect(recovered.statusSource).toBe("shared-observer");
     expect(recovered.agents[0]?.status).toBe("thinking");
+    expect(
+      emitted.some(({ statusSource }) => statusSource === "shared-observer"),
+    ).toBe(true);
+    expect(emitted.every(({ connection }) => connection === "connected")).toBe(
+      true,
+    );
   });
 
   it("keeps persisted inventory when a scheduled shared retry also fails", async () => {
@@ -397,6 +406,8 @@ describe("CodexProvider", () => {
     );
 
     await provider.connect();
+    const emitted: OfficeSnapshot[] = [];
+    provider.subscribe((current) => emitted.push(current));
     now = new Date(NOW.getTime() + 10_001);
     const snapshot = await provider.refresh();
 
@@ -405,6 +416,48 @@ describe("CodexProvider", () => {
       agents: [{ id: "thread-root", status: "unknown" }],
       connection: "connected",
     });
+    expect(emitted).not.toHaveLength(0);
+    expect(emitted.every(({ connection }) => connection === "connected")).toBe(
+      true,
+    );
+  });
+
+  it("degrades when both a silent shared retry and fallback recovery fail", async () => {
+    let now = NOW;
+    const failingTransport = () => {
+      const transport = new FakeTransport();
+      transport.start = () => {
+        transport.started += 1;
+        throw new CodexTransportError("socket-unavailable");
+      };
+      return transport;
+    };
+    const initialShared = failingTransport();
+    const retryShared = failingTransport();
+    const initialFallback = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+    );
+    const failingFallback = failingTransport();
+    const shared = [initialShared, retryShared];
+    const fallbacks = [initialFallback, failingFallback];
+    const provider = new CodexProvider(
+      () => shared.shift()!,
+      () => now,
+      "/synthetic/workspace",
+      false,
+      true,
+      () => fallbacks.shift()!,
+    );
+
+    await provider.connect();
+    const emitted: OfficeSnapshot[] = [];
+    provider.subscribe((snapshot) => emitted.push(snapshot));
+    now = new Date(NOW.getTime() + 10_001);
+
+    const snapshot = await provider.refresh();
+
+    expect(snapshot.connection).toBe("degraded");
+    expect(emitted.at(-1)?.connection).toBe("degraded");
   });
 
   it("fails closed to persisted unreported status when shared metadata is malformed", async () => {

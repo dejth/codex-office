@@ -64,6 +64,10 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Keep the last safe connected Office visible during experimental Shared App
+  Server recovery, preventing ten-second warning flashes while still
+  publishing recovered loaded-thread status and real dual-source failures.
+
 - Apply Office status filters to root sessions and show a clear empty state
   when no complete agent group matches.
 - Fall back to the private workspace snapshot provider when the experimental

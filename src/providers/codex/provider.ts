@@ -123,6 +123,7 @@ export class CodexProvider implements AgentProvider {
   private async connectTransport(
     transport: CodexRpcTransport,
     sharedAppServer: boolean,
+    publishFailure = true,
   ): Promise<boolean> {
     this.activeSharedAppServer = sharedAppServer;
     const generation = ++this.generation;
@@ -152,7 +153,7 @@ export class CodexProvider implements AgentProvider {
         )
           ? "unsupported-version"
           : "invalid-provider-data";
-        this.setDegraded();
+        if (publishFailure) this.setDegraded();
         transport.stop();
         this.transport = undefined;
         this.connected = false;
@@ -169,7 +170,7 @@ export class CodexProvider implements AgentProvider {
         this.transport = undefined;
         this.connected = false;
         this.currentDiagnostic = diagnosticFromError(error);
-        this.setDegraded();
+        if (publishFailure) this.setDegraded();
       }
       return false;
     }
@@ -228,7 +229,11 @@ export class CodexProvider implements AgentProvider {
     this.transport?.stop();
     this.transport = undefined;
     this.connected = false;
-    const recovered = await this.connectTransport(this.createTransport(), true);
+    const recovered = await this.connectTransport(
+      this.createTransport(),
+      true,
+      false,
+    );
     if (recovered) {
       this.nextSharedRetryAtMs = null;
       return true;
