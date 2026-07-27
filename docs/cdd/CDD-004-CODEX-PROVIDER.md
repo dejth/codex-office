@@ -108,8 +108,12 @@ This preserves workspace inventory and reported account capacity while keeping
 all fallback agent states `Unreported`; fallback data is never labeled live.
 While the experiment remains enabled, a connected fallback retries the shared
 observer no more than once every ten seconds. A failed recovery reconnects the
-private provider and retains the last safe snapshot; a successful recovery
-switches subsequent snapshot provenance to shared observer.
+private provider and retains the last safe snapshot; the internal shared probe
+does not publish a transient degraded snapshot while that safe fallback can be
+restored. A successful recovery switches subsequent snapshot provenance to
+shared observer and publishes the loaded thread's reported basic status. Only
+failure of both the shared probe and fallback recovery becomes visibly
+degraded.
 Every snapshot carries a bounded status-source enum so the UI can distinguish
 the shared observer from persisted inventory fallback without exposing socket,
 process, executable, or path details. A healthy shared observer with zero

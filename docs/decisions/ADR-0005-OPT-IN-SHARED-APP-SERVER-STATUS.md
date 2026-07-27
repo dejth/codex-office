@@ -44,6 +44,8 @@ default production dependency.
 - While the experiment remains enabled, retry recovery from a connected
   fallback with a ten-second minimum cooldown. Preserve the last safe snapshot
   during the transition and reconnect private inventory after a failed retry.
+  Do not expose the failed shared probe as a transient degraded UI state when
+  fallback recovery succeeds; publish degradation only when both sources fail.
 - Project a bounded source enum so the UI distinguishes a connected shared
   observer from persisted inventory. Do not expose socket or executable
   details.
