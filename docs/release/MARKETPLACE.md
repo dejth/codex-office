@@ -8,7 +8,11 @@
 4. Create the least-privileged Azure DevOps/Marketplace token required by current official instructions; store it only as a protected GitHub environment secret.
 5. Protect the `marketplace` environment with human approval.
 
-Because Marketplace requirements can change, verify the current official VS Code publishing documentation before the first real publication.
+Because Marketplace requirements can change, verify the
+[current official VS Code publishing documentation](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
+before the first real publication. The 0.1.0 beta candidate uses publisher ID
+`dejth`, but the Marketplace portal must still confirm that publisher identity
+and the `codex-office` extension-name availability.
 
 ## Beta path
 
@@ -16,7 +20,10 @@ Package locally with `pnpm package`, inspect archive contents, install the VSIX 
 
 ## Listing checklist
 
-Clear value proposition; animated and Meter screenshots; privacy statement; compatibility; known limitations; no billing claim; changelog; support/security links; license/attribution; verified install instructions.
+Clear value proposition; sanitized production-UI screenshot; privacy
+statement; compatibility; known limitations; no billing or per-agent-token
+claim; changelog; support/security links; license/attribution; verified install
+instructions. Marketplace icons must be packaged PNG files, not SVG.
 
 ## Rollback
 

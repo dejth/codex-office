@@ -15,7 +15,7 @@ export const budgets = Object.freeze({
 });
 
 const forbiddenPackagePaths = [
-  /^extension\/(?:src|tests|tasks|docs|coverage|\.github)\//,
+  /^extension\/(?:src|tests|tasks|docs|coverage|artifacts|\.github|\.vscode)\//,
   /^extension\/assets\/office\/(?:animation|source|status)\//,
   /^extension\/assets\/office\/status-atlas\.png$/,
   /^extension\/tmp\//,

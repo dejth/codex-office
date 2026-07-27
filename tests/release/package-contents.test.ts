@@ -91,6 +91,8 @@ describe("VSIX content policy", () => {
         "extension/dist/webview.js",
         "extension/dist/webview.css",
         "extension/src/extension/extension.ts",
+        "extension/.vscode/launch.json",
+        "extension/artifacts/codex-office-0.1.0.sha256",
         "extension/assets/office/source/atlas.png",
         "extension/assets/office/animation/thinking.png",
         "extension/tmp/imagegen/atlas.png",

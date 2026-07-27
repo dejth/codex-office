@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Codex Office Marketplace preview</title>
+    <style>
+      :root {
+        --vscode-font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        --vscode-foreground: #cccccc;
+        --vscode-descriptionForeground: #a3a3a3;
+        --vscode-sideBar-background: #181818;
+        --vscode-editor-background: #1f1f1f;
+        --vscode-sideBarSectionHeader-background: #242424;
+        --vscode-widget-border: #3a3a3a;
+        --vscode-widget-shadow: #000000;
+        --vscode-focusBorder: #0078d4;
+        --vscode-button-background: #0e639c;
+        --vscode-button-foreground: #ffffff;
+        --vscode-list-activeSelectionBackground: #04395e;
+        --vscode-list-activeSelectionForeground: #ffffff;
+        --vscode-list-hoverBackground: #2a2d2e;
+        --vscode-notifications-background: #252526;
+        --vscode-notificationsWarningIcon-foreground: #cca700;
+        --vscode-errorForeground: #f48771;
+        --vscode-testing-iconPassed: #73c991;
+      }
+      html,
+      body {
+        min-height: 100%;
+      }
+    </style>
+    <link rel="stylesheet" href="/dist/webview.css" />
+    <script>
+      window.acquireVsCodeApi = () => ({ postMessage() {} });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="/dist/webview.js"></script>
+    <script>
+      const agent = (id, name, status, updatedAt, children = []) => ({
+        id,
+        name,
+        status,
+        lastActivityAt: updatedAt,
+        usage: null,
+        children,
+      });
+      const observedAt = "2026-07-27T08:30:00.000Z";
+      const agents = [
+        agent("root_alpha", "Atlas", "thinking", observedAt, [
+          agent("sub_alpha_1", "Kuhn", "editing", observedAt),
+          agent(
+            "sub_alpha_2",
+            "Faraday",
+            "waiting-approval",
+            "2026-07-27T08:29:00.000Z",
+          ),
+        ]),
+        agent("root_beta", "Nova", "idle", "2026-07-27T08:24:00.000Z", [
+          agent("sub_beta_1", "Boole", "completed", "2026-07-27T08:20:00.000Z"),
+        ]),
+        agent("root_gamma", "Orbit", "failed", "2026-07-27T08:18:00.000Z"),
+      ];
+      setTimeout(() => {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: {
+              protocolVersion: 3,
+              sequence: 1,
+              type: "snapshot",
+              snapshot: {
+                id: "snapshot_marketplace",
+                updatedAt: observedAt,
+                agents,
+                rateLimits: {
+                  primary: {
+                    usedPercent: 38,
+                    windowDurationMinutes: 10080,
+                    resetsAt: null,
+                  },
+                  secondary: null,
+                  provenance: "reported",
+                },
+                statusSource: "shared-observer",
+                unresolved: [],
+                connection: "connected",
+              },
+            },
+          }),
+        );
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            data: {
+              protocolVersion: 3,
+              sequence: 1,
+              type: "settings",
+              reducedMotion: true,
+            },
+          }),
+        );
+      }, 100);
+    </script>
+  </body>
+</html>
