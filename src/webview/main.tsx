@@ -29,6 +29,7 @@ const INITIAL_SNAPSHOT: WebviewSnapshot = {
   updatedAt: "1970-01-01T00:00:00.000Z",
   agents: [],
   rateLimits: null,
+  statusSource: null,
   unresolved: [],
   connection: "disconnected",
 };
@@ -109,6 +110,7 @@ function App(): React.JSX.Element {
         selectedId={selectedId}
         onSelect={selectAgent}
         connection={connection.state}
+        statusSource={snapshot.statusSource}
       />
       <p className="sr-only" aria-live="polite">
         {announcement}

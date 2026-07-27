@@ -39,6 +39,7 @@ interface OfficeViewProps {
   selectedId: string | null;
   onSelect(id: string): void;
   connection: WebviewSnapshot["connection"];
+  statusSource?: WebviewSnapshot["statusSource"];
 }
 
 interface PositionedAgent {
@@ -200,6 +201,7 @@ export const OfficeView = memo(function OfficeView({
   selectedId,
   onSelect,
   connection,
+  statusSource = null,
 }: OfficeViewProps): React.JSX.Element {
   const positioned = useMemo(() => flattenOfficeAgents(agents), [agents]);
   const [filter, setFilter] = useState<OfficeFilter>("all");
@@ -247,11 +249,20 @@ export const OfficeView = memo(function OfficeView({
           <p className="eyebrow">Codex workspace</p>
           <h1 id="office-heading">Agent floor</h1>
         </div>
-        {isEmpty ? null : (
+        <div className="office-badges">
+          {isEmpty ? null : (
+            <span className="preview-badge">
+              {agents.length} Roots · {subagentCount} Subs
+            </span>
+          )}
           <span className="preview-badge">
-            {agents.length} Roots · {subagentCount} Subs
+            {statusSource === "shared-observer"
+              ? "Shared observer"
+              : statusSource === "persisted-inventory"
+                ? "Persisted inventory"
+                : "Source unavailable"}
           </span>
-        )}
+        </div>
       </div>
       <p className="view-summary">
         Sessions appear at deterministic stations using status reported by the

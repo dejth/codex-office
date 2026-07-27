@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { AgentNode, OfficeSnapshot } from "../domain/model";
 
-export const WEBVIEW_PROTOCOL_VERSION = 2 as const;
+export const WEBVIEW_PROTOCOL_VERSION = 3 as const;
 const MAX_AGENTS = 1_000;
 const MAX_AGENT_DEPTH = 32;
 const MAX_GRAPH_VALUES = 20_000;
@@ -88,6 +88,7 @@ const snapshotSchema = z
     updatedAt: z.string().refine(isCanonicalTimestamp),
     agents: z.array(agentSchema).max(MAX_AGENTS),
     rateLimits: accountRateLimitsSchema.nullable(),
+    statusSource: z.enum(["shared-observer", "persisted-inventory"]).nullable(),
     unresolved: z
       .array(
         z
@@ -346,6 +347,7 @@ function projectOfficeSnapshotUnsafe(
                 : { ...source.rateLimits.secondary },
             provenance: "reported",
           },
+    statusSource: source.statusSource,
     unresolved: safeUnresolved,
     connection: source.connection,
   };

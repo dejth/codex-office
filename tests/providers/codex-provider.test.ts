@@ -220,6 +220,7 @@ describe("CodexProvider", () => {
     );
     expect(snapshot.connection).toBe("connected");
     expect(snapshot.agents[0]?.status).toBe("thinking");
+    expect(snapshot.statusSource).toBe("persisted-inventory");
     expect(snapshot.agents[0]?.children[0]?.status).toBe("waiting-approval");
     expect(snapshot.agents[0]?.usage).toBeNull();
     expect(JSON.stringify(snapshot)).not.toMatch(
@@ -270,6 +271,7 @@ describe("CodexProvider", () => {
     await provider.connect();
     const snapshot = await provider.snapshot();
 
+    expect(snapshot.statusSource).toBe("shared-observer");
     expect(snapshot.agents[0]?.status).toBe("thinking");
     expect(snapshot.agents[0]?.lastActivityAt).toBe("2025-07-23T04:05:00.000Z");
     expect(snapshot.agents[0]?.children[0]?.status).toBe("waiting-approval");
@@ -319,6 +321,7 @@ describe("CodexProvider", () => {
     ).toBe(false);
     expect(snapshot).toMatchObject({
       connection: "connected",
+      statusSource: "persisted-inventory",
       agents: [{ id: "thread-root", status: "unknown" }],
     });
     expect(provider.diagnostic()).toBe("none");
@@ -607,6 +610,7 @@ describe("CodexProvider", () => {
       agents: [],
       rateLimits: null,
       connection: "connected",
+      statusSource: "persisted-inventory",
     });
     expect(listener).toHaveBeenCalledWith(snapshot);
     unsubscribe();

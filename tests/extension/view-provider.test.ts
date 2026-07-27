@@ -31,6 +31,7 @@ const empty: OfficeSnapshot = {
   updatedAt: "2026-01-01T00:00:00.000Z",
   agents: [],
   rateLimits: null,
+  statusSource: "persisted-inventory",
   connection: "connected",
 };
 
@@ -93,7 +94,7 @@ describe("CodexOfficeViewProvider", () => {
     const viewProvider = new CodexOfficeViewProvider({} as never, provider);
     viewProvider.resolveWebviewView(harness.view as never);
 
-    harness.receive({ protocolVersion: 2, type: "ready" });
+    harness.receive({ protocolVersion: 3, type: "ready" });
     await flush();
 
     expect(provider.connect).toHaveBeenCalledOnce();
@@ -118,8 +119,8 @@ describe("CodexOfficeViewProvider", () => {
     const harness = createView();
     const viewProvider = new CodexOfficeViewProvider({} as never, provider);
     viewProvider.resolveWebviewView(harness.view as never);
-    harness.receive({ protocolVersion: 2, type: "refresh" });
-    harness.receive({ protocolVersion: 2, type: "refresh" });
+    harness.receive({ protocolVersion: 3, type: "refresh" });
+    harness.receive({ protocolVersion: 3, type: "refresh" });
     await flush();
 
     expect(provider.connect).toHaveBeenCalledOnce();
@@ -153,12 +154,12 @@ describe("CodexOfficeViewProvider", () => {
     const viewProvider = new CodexOfficeViewProvider({} as never, provider);
     const first = createView();
     viewProvider.resolveWebviewView(first.view as never);
-    first.receive({ protocolVersion: 2, type: "ready" });
+    first.receive({ protocolVersion: 3, type: "ready" });
     first.dispose();
 
     const second = createView();
     viewProvider.resolveWebviewView(second.view as never);
-    second.receive({ protocolVersion: 2, type: "ready" });
+    second.receive({ protocolVersion: 3, type: "ready" });
     await flush();
     resolveFirst?.();
     await flush();
@@ -177,7 +178,7 @@ describe("CodexOfficeViewProvider", () => {
       const harness = createView();
       const viewProvider = new CodexOfficeViewProvider({} as never, provider);
       viewProvider.resolveWebviewView(harness.view as never);
-      harness.receive({ protocolVersion: 2, type: "ready" });
+      harness.receive({ protocolVersion: 3, type: "ready" });
       await Promise.resolve();
       await Promise.resolve();
 
@@ -203,7 +204,7 @@ describe("CodexOfficeViewProvider", () => {
     const viewProvider = new CodexOfficeViewProvider({} as never, provider);
     viewProvider.resolveWebviewView(harness.view as never);
 
-    harness.receive({ protocolVersion: 2, type: "ready" });
+    harness.receive({ protocolVersion: 3, type: "ready" });
     await flush();
 
     expect(harness.posted).toContainEqual(
@@ -228,7 +229,7 @@ describe("CodexOfficeViewProvider", () => {
     const viewProvider = new CodexOfficeViewProvider({} as never, provider);
     viewProvider.resolveWebviewView(harness.view as never);
 
-    harness.receive({ protocolVersion: 2, type: "ready" });
+    harness.receive({ protocolVersion: 3, type: "ready" });
     await flush();
 
     expect(harness.posted).toContainEqual(

@@ -48,5 +48,6 @@ export interface OfficeSnapshot {
   updatedAt: string;
   agents: AgentNode[];
   rateLimits: AccountRateLimits | null;
+  statusSource: "shared-observer" | "persisted-inventory" | null;
   connection: "connected" | "disconnected" | "degraded";
 }

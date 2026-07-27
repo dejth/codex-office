@@ -245,6 +245,9 @@ export class CodexProvider implements AgentProvider {
         updatedAt: observedAt.toISOString(),
         agents: hierarchy.agents,
         rateLimits: this.rateLimits,
+        statusSource: this.activeSharedAppServer
+          ? "shared-observer"
+          : "persisted-inventory",
         connection:
           hierarchy.unresolved.length === 0 ? "connected" : "degraded",
       };
@@ -648,6 +651,7 @@ function emptySnapshot(
     updatedAt: new Date(0).toISOString(),
     agents: [],
     rateLimits: null,
+    statusSource: null,
     connection,
   };
 }

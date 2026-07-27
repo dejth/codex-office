@@ -129,6 +129,7 @@ describe("Office view", () => {
         selectedId="agent_preview_3"
         onSelect={() => undefined}
         connection="connected"
+        statusSource="shared-observer"
       />,
     );
 
@@ -141,6 +142,7 @@ describe("Office view", () => {
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("1 Roots · 3 Subs");
     expect(html).toContain("4 in room");
+    expect(html).toContain("Shared observer");
     expect(html).toContain('aria-label="Filter agents"');
     expect(html).toContain("Unreported 0");
     expect(html.match(/tabindex="0"/g)).toHaveLength(1);

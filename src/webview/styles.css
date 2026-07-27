@@ -61,6 +61,12 @@ button {
   padding: 3px 7px;
   font-size: 11px;
 }
+.office-badges {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 4px;
+}
 .view-summary {
   margin: 8px 0 16px;
   color: var(--vscode-descriptionForeground);
@@ -591,6 +597,11 @@ button:focus-visible {
   .preview-badge {
     display: inline-block;
     margin-top: 8px;
+  }
+  .office-badges {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   .agent-card {
     align-items: flex-start;

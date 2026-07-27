@@ -41,6 +41,9 @@ default production dependency.
   metadata poll, retry through the existing private stdio snapshot provider.
   Fallback inventory remains `Unreported`; it is never presented as live
   shared status.
+- Project a bounded source enum so the UI distinguishes a connected shared
+  observer from persisted inventory. Do not expose socket or executable
+  details.
 - Preserve the persisted, exact-workspace state-database inventory as the
   authoritative hierarchy. Use `thread/loaded/list`, intersect the identifiers
   with that bounded inventory, and call `thread/read` with
@@ -106,3 +109,9 @@ shortcut produces a handshake rejected by the current App Server. Connecting
 to the fixed logical endpoint `ws://localhost/rpc` while supplying an explicit
 Unix-domain `createConnection` succeeds and preserves the same local-only
 socket boundary. A regression test pins this connection shape.
+
+On 2026-07-27, a repeated content-free probe confirmed that the secured 0.145.0
+daemon was healthy while `thread/loaded/list` returned zero identifiers. This
+explains an all-Unreported workspace inventory without treating it as a shared
+transport failure: existing VS Code sessions were owned by separate private
+App Server processes rather than the shared daemon.

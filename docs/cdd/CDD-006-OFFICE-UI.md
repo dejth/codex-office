@@ -8,6 +8,11 @@ One sidebar renders compact account capacity and hierarchy counts above the
 filterable animated agent floor. There is no mode switch or duplicated
 hierarchy presentation.
 
+The Agent floor shows a compact non-color source badge: `Shared observer`,
+`Persisted inventory`, or `Source unavailable`. The badge describes where
+status came from; it does not claim that every discovered session is loaded or
+live.
+
 ## State-to-motion mapping
 
 Thinking: thought bubble; reading: shelf/reading pose; editing: desk typing; running command: terminal station; waiting approval: high-priority badge; completed: calm success pose; failed: non-flashing warning; idle: subtle rest; internal unknown: neutral question state labelled `Unreported` in the UI.
