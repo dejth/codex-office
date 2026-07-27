@@ -35,6 +35,16 @@ New cumulative event, same event repeated, out-of-order event, process restart, 
 - A component that would exceed `Number.MAX_SAFE_INTEGER` fails closed to unavailable without hiding other safe components.
 - Equal values, replay-like values, and parent/child context are neither deduplicated nor added without stable evidence. The UI labels the scope as visible thread snapshots and warns that context may overlap.
 - Thread usage remains hidden while the current provider cannot report it.
+- A token summary printed when a CLI session exits is user-facing output, not
+  a supported integration boundary. Providers must not parse terminal output,
+  shell history, or rollout JSONL to populate agent usage.
+- The metadata-only shared observer keeps `usage: false`: current App Server
+  usage notifications are delivered only to connections subscribed to the
+  thread, and there is no content-free cumulative usage read request.
+- Per-agent usage may be enabled only after Codex exposes an official read-only
+  source that does not resume, attach to, reconstruct, or take ownership of a
+  thread. Reasoning and cache-write components require an explicit domain and
+  webview protocol revision before presentation.
 
 ## Account-capacity presentation
 

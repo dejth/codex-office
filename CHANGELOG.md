@@ -6,6 +6,10 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Document the Codex 0.145.0 boundary that keeps per-agent token usage hidden
+  from independent shared observers until an official content-free read or
+  subscription API is available.
+
 - Retry an explicitly enabled shared observer after a bounded cooldown so a
   transient startup failure does not leave the Office on persisted inventory
   for the rest of the VS Code window.
