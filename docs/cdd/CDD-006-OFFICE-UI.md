@@ -33,6 +33,13 @@ snapshot or selection. Unreported includes a count and means the provider found
 the agent but did not supply a detailed status. Decorative room chrome must not
 contain mock timestamps or other values that can be mistaken for provider data.
 
+The room ranks intact parent/subagent groups by reported relevance: active
+states first, attention states next, inactive states after them, and Unreported
+last. Within the same class, the newest canonical `lastActivityAt` comes first;
+stable opaque ID breaks ties. A descendant can promote its whole group, but the
+parent remains before its children. Missing activity time sorts last within its
+class and is never estimated.
+
 ## Provider and empty states
 
 - Production UI describes provider-backed content as local sessions. It never

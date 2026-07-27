@@ -67,6 +67,7 @@ function thread(
     sessionId: "session-synthetic",
     parentThreadId,
     createdAt: 1_753_243_200,
+    updatedAt: 1_753_243_260,
     status,
     preview: "must be discarded",
     cwd: "/private/workspace",
@@ -210,6 +211,8 @@ describe("CodexProvider", () => {
         cwd: null,
         sourceKinds: DISCOVERY_SOURCES,
         useStateDbOnly: true,
+        sortKey: "updated_at",
+        sortDirection: "desc",
       },
     });
     expect(transport.calls.some(({ method }) => method === "thread/read")).toBe(
@@ -238,6 +241,7 @@ describe("CodexProvider", () => {
         {
           thread: {
             id: "thread-root",
+            updatedAt: 1_753_243_500,
             status: { type: "active", activeFlags: [] },
             cwd: "/private/never-retain",
             turns: [{ prompt: "must be discarded" }],
@@ -246,6 +250,7 @@ describe("CodexProvider", () => {
         {
           thread: {
             id: "thread-child",
+            updatedAt: 1_753_243_400,
             status: {
               type: "active",
               activeFlags: ["waitingOnApproval"],
@@ -266,6 +271,7 @@ describe("CodexProvider", () => {
     const snapshot = await provider.snapshot();
 
     expect(snapshot.agents[0]?.status).toBe("thinking");
+    expect(snapshot.agents[0]?.lastActivityAt).toBe("2025-07-23T04:05:00.000Z");
     expect(snapshot.agents[0]?.children[0]?.status).toBe("waiting-approval");
     expect(
       transport.calls.filter(({ method }) => method === "thread/read"),
@@ -565,6 +571,8 @@ describe("CodexProvider", () => {
           cwd: "/synthetic/workspace",
           sourceKinds: DISCOVERY_SOURCES,
           useStateDbOnly: true,
+          sortKey: "updated_at",
+          sortDirection: "desc",
         },
       },
       {
@@ -575,6 +583,8 @@ describe("CodexProvider", () => {
           cwd: "/synthetic/workspace",
           sourceKinds: DISCOVERY_SOURCES,
           useStateDbOnly: true,
+          sortKey: "updated_at",
+          sortDirection: "desc",
         },
       },
     ]);

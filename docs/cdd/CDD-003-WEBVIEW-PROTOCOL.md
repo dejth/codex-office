@@ -1,8 +1,8 @@
 # CDD-003 — Webview Protocol Contract
 
-Status: Verified for protocol v1
+Status: Verified for protocol v2
 
-Only sanitized, minimal messages cross the extension/webview boundary. Every message uses `protocolVersion: 1`; host messages also carry a nonnegative safe-integer sequence.
+Only sanitized, minimal messages cross the extension/webview boundary. Every message uses `protocolVersion: 2`; host messages also carry a nonnegative safe-integer sequence.
 
 ## Host to webview
 
@@ -32,9 +32,11 @@ The host creates a fresh projection before sending domain state:
 - agents receive panel-local opaque IDs and generated labels;
 - projection returns an opaque-to-domain ID map that the host caller must retain before enabling selections;
 - usage is cloned and retains its provenance; and
+- reported thread recency crosses only as canonical nullable
+  `lastActivityAt`; and
 - unresolved nodes expose only an opaque ID and bounded reason enum. Detailed diagnostics remain host-local.
 
-Protocol v1 allows at most 1,000 total agents, a tree depth of 32, bounded strings, canonical UTC timestamps, and nonnegative safe token integers or `null`. Agent IDs must be globally unique across valid and unresolved records.
+Protocol v2 allows at most 1,000 total agents, a tree depth of 32, bounded strings, canonical UTC timestamps, and nonnegative safe token integers or `null`. Agent IDs must be globally unique across valid and unresolved records.
 
 ## Boundary behavior
 

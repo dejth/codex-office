@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { AgentNode, OfficeSnapshot } from "../domain/model";
 
-export const WEBVIEW_PROTOCOL_VERSION = 1 as const;
+export const WEBVIEW_PROTOCOL_VERSION = 2 as const;
 const MAX_AGENTS = 1_000;
 const MAX_AGENT_DEPTH = 32;
 const MAX_GRAPH_VALUES = 20_000;
@@ -64,6 +64,7 @@ export interface WebviewAgent {
   id: string;
   name: string;
   status: z.infer<typeof statusSchema>;
+  lastActivityAt: string | null;
   usage: z.infer<typeof usageSchema> | null;
   children: WebviewAgent[];
 }
@@ -74,6 +75,7 @@ const agentSchema: z.ZodType<WebviewAgent> = z.lazy(() =>
       id: idSchema,
       name: safeNameSchema,
       status: statusSchema,
+      lastActivityAt: z.string().refine(isCanonicalTimestamp).nullable(),
       usage: usageSchema.nullable(),
       children: z.array(agentSchema).max(MAX_AGENTS),
     })
@@ -307,6 +309,7 @@ function projectOfficeSnapshotUnsafe(
       id,
       name: projectedName,
       status: current.source.status,
+      lastActivityAt: current.source.lastActivityAt,
       usage: current.source.usage === null ? null : { ...current.source.usage },
       children: [],
     };

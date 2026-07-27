@@ -10,9 +10,13 @@ The domain is provider-neutral even though Codex is the sole provider. It models
 - Roots have `parentId: null`; every non-root parent must exist or the node is placed in an `unresolved` group.
 - Cycles are invalid and surfaced as degraded provider data.
 - Unknown status is preserved.
+- Reported per-agent activity time is canonical UTC or `null`; it is never
+  inferred from snapshot observation time.
 - Missing usage is `null`, never zero.
 - Totals retain provenance and cannot silently combine incompatible scopes.
 - Ordering is deterministic: main/root first, then start time if known, then stable ID.
+- Domain hierarchy construction remains creation-ordered; presentation may
+  rank intact sibling groups using reported activity metadata.
 
 ## Hierarchy validation result
 

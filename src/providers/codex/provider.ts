@@ -362,6 +362,7 @@ const threadListItemSchema = z
     agentNickname: safeAgentLabel.nullable().optional().default(null),
     agentRole: safeAgentLabel.nullable().optional().default(null),
     createdAt: z.number().int().nonnegative().safe(),
+    updatedAt: z.number().int().nonnegative().safe(),
     status: threadStatusSchema,
   })
   .strip();
@@ -382,6 +383,7 @@ const threadReadStatusSchema = z
     thread: z
       .object({
         id,
+        updatedAt: z.number().int().nonnegative().safe(),
         status: threadStatusSchema,
       })
       .strip(),
@@ -433,6 +435,8 @@ async function listPersistedThreads(
         cwd: workspaceCwd ?? null,
         sourceKinds: DISCOVERY_SOURCE_KINDS,
         useStateDbOnly: true,
+        sortKey: "updated_at",
+        sortDirection: "desc",
       }),
     );
     if (!parsed.success) throw new Error("invalid provider data");
@@ -481,6 +485,7 @@ async function overlayLoadedThreadStatuses(
           if (existing !== undefined) {
             persistedById.set(threadId, {
               ...existing,
+              updatedAt: parsed.data.thread.updatedAt,
               status: parsed.data.thread.status,
             });
           }
@@ -531,6 +536,7 @@ function sameSafeThread(left: SafeThread, right: SafeThread): boolean {
     left.agentNickname === right.agentNickname &&
     left.agentRole === right.agentRole &&
     left.createdAt === right.createdAt &&
+    left.updatedAt === right.updatedAt &&
     JSON.stringify(left.status) === JSON.stringify(right.status)
   );
 }
@@ -573,6 +579,7 @@ function toHierarchyAgents(threads: readonly SafeThread[]): HierarchyAgent[] {
         : { displayName }),
       task: null,
       status: toAgentStatus(thread.status),
+      lastActivityAt: secondsToCanonicalUtc(thread.updatedAt),
       usage: null,
       startedAt: secondsToCanonicalUtc(thread.createdAt),
     };

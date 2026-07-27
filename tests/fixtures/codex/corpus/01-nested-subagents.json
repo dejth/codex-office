@@ -53,6 +53,7 @@
         "name": "Agent 0001",
         "task": null,
         "status": "unknown",
+        "lastActivityAt": null,
         "usage": null,
         "children": [
           {
@@ -61,6 +62,7 @@
             "name": "Agent 0002",
             "task": null,
             "status": "idle",
+            "lastActivityAt": null,
             "usage": null,
             "children": [
               {
@@ -69,6 +71,7 @@
                 "name": "Agent 0003",
                 "task": null,
                 "status": "idle",
+                "lastActivityAt": null,
                 "usage": null,
                 "children": []
               }

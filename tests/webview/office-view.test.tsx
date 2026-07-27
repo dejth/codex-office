@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { previewSnapshot } from "../../src/protocol/preview-fixture";
 import type { WebviewAgent } from "../../src/protocol/webview";
-import { nextOfficeFocusId, OfficeView } from "../../src/webview/office-view";
+import {
+  nextOfficeFocusId,
+  OfficeView,
+  orderOfficeAgents,
+} from "../../src/webview/office-view";
 
 const allStatuses: WebviewAgent["status"][] = [
   "thinking",
@@ -18,6 +22,67 @@ const allStatuses: WebviewAgent["status"][] = [
 ];
 
 describe("Office view", () => {
+  it("orders active groups first and reported activity newest first", () => {
+    const makeAgent = (
+      id: string,
+      status: WebviewAgent["status"],
+      lastActivityAt: string | null,
+      children: WebviewAgent[] = [],
+    ): WebviewAgent => ({
+      id,
+      name: id,
+      status,
+      lastActivityAt,
+      usage: null,
+      children,
+    });
+    const ordered = orderOfficeAgents([
+      makeAgent("inactive-new", "idle", "2026-01-01T05:00:00.000Z"),
+      makeAgent("active-old", "thinking", "2026-01-01T02:00:00.000Z"),
+      makeAgent("active-new", "editing", "2026-01-01T04:00:00.000Z"),
+      makeAgent("unreported", "unknown", "2026-01-01T06:00:00.000Z"),
+    ]);
+
+    expect(ordered.map(({ id }) => id)).toEqual([
+      "active-new",
+      "active-old",
+      "inactive-new",
+      "unreported",
+    ]);
+  });
+
+  it("keeps parent groups together and promotes a group with active children", () => {
+    const child: WebviewAgent = {
+      id: "active-child",
+      name: "Active child",
+      status: "running-command",
+      lastActivityAt: "2026-01-01T03:00:00.000Z",
+      usage: null,
+      children: [],
+    };
+    const ordered = orderOfficeAgents([
+      {
+        id: "idle-root",
+        name: "Idle root",
+        status: "idle",
+        lastActivityAt: "2026-01-01T05:00:00.000Z",
+        usage: null,
+        children: [],
+      },
+      {
+        id: "active-group",
+        name: "Active group",
+        status: "unknown",
+        lastActivityAt: null,
+        usage: null,
+        children: [child],
+      },
+    ]);
+
+    expect(ordered.map(({ id }) => id)).toEqual(["active-group", "idle-root"]);
+    expect(ordered[0]?.children.map(({ id }) => id)).toEqual(["active-child"]);
+  });
+
   it("renders deterministic stations from sanitized agent statuses", () => {
     const html = renderToStaticMarkup(
       <OfficeView
