@@ -13,6 +13,7 @@ const manifest = JSON.parse(
   readFileSync("package.json", "utf8"),
 ) as ExtensionManifest;
 const readme = readFileSync("README.md", "utf8");
+const preview = readFileSync("scripts/marketplace-preview.html", "utf8");
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
 describe("Marketplace metadata", () => {
@@ -34,5 +35,11 @@ describe("Marketplace metadata", () => {
       "Per-agent token usage is intentionally unavailable",
     );
     expect(readme).not.toContain("Understand where the tokens go");
+  });
+
+  it("keeps the deterministic preview directly openable from its file path", () => {
+    expect(preview).toContain('href="../dist/webview.css"');
+    expect(preview).toContain('src="../dist/webview.js"');
+    expect(preview).not.toMatch(/(?:href|src)="\/dist\//u);
   });
 });

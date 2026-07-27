@@ -10,7 +10,7 @@
 - Contract decisions: Public copy claims workspace inventory, basic opt-in live
   status, and reported account capacity only. It explicitly excludes billing,
   cost, control actions, and per-agent token totals.
-- Verification performed and result: `pnpm check` passed 25 files / 222 tests;
+- Verification performed and result: `pnpm check` passed 25 files / 223 tests;
   `pnpm audit --prod` reported no known vulnerabilities; VSIX budget/content
   audit passed at 687,755 bytes and 24 files; isolated install/disable/uninstall
   lifecycle passed on VS Code 1.96.4 and 1.130.0; SHA-256 is recorded alongside
