@@ -10,13 +10,17 @@
 
 Because Marketplace requirements can change, verify the
 [current official VS Code publishing documentation](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
-before the first real publication. The 0.1.0 beta candidate uses publisher ID
-`dejth`, but the Marketplace portal must still confirm that publisher identity
-and the `codex-office` extension-name availability.
+before every publication. The Marketplace portal confirmed publisher ID
+`dejth` and the `codex-office` extension name for the manually approved 0.1.0
+release.
 
 ## Beta path
 
 Package locally with `pnpm package`, inspect archive contents, install the VSIX in a clean profile, validate commands/sidebar/theme/accessibility, then publish manually or approve the release workflow.
+
+Version 0.1.0 was published manually on 2026-07-27 as
+[`dejth.codex-office`](https://marketplace.visualstudio.com/items?itemName=dejth.codex-office).
+That approval applies only to this version.
 
 ## Listing checklist
 

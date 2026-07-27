@@ -1,6 +1,6 @@
 # Task: Prepare Marketplace beta 0.1.0
 
-Status: Ready for review
+Status: Complete
 Owner: Dex
 Governing contract: CDD-007
 Depends on: Task 047
@@ -41,3 +41,11 @@ human gate.
 - [x] Clean-profile lifecycle
 - [x] Privacy/security impact recorded
 - [x] Handoff complete
+
+## Post-publication result
+
+- [x] Maintainer reviewed and explicitly approved Marketplace publication.
+- [x] `dejth.codex-office` version `0.1.0` is publicly available.
+- [x] PR #59 promoted the reviewed release source to `main` after CI passed.
+- [x] Marketplace icon, preview image, README, and repository links render from
+      the default branch.
