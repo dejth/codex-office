@@ -284,6 +284,40 @@ describe("CodexProvider", () => {
     );
   });
 
+  it("falls back to private snapshots when shared transport initialization fails", async () => {
+    const shared = new FakeTransport();
+    shared.start = () => {
+      shared.started += 1;
+      throw new CodexTransportError("socket-unavailable");
+    };
+    const fallback = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+    );
+    const provider = new CodexProvider(
+      () => shared,
+      () => NOW,
+      "/synthetic/workspace",
+      false,
+      true,
+      () => fallback,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(shared.started).toBe(1);
+    expect(shared.stopped).toBeGreaterThan(0);
+    expect(fallback.started).toBe(1);
+    expect(
+      fallback.calls.some(({ method }) => method === "thread/loaded/list"),
+    ).toBe(false);
+    expect(snapshot).toMatchObject({
+      connection: "connected",
+      agents: [{ id: "thread-root", status: "unknown" }],
+    });
+    expect(provider.diagnostic()).toBe("none");
+  });
+
   it("fails closed to persisted unreported status when shared metadata is malformed", async () => {
     const transport = configuredTransport(
       thread("thread-root", null, { type: "notLoaded" }),

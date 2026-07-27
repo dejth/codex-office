@@ -53,6 +53,9 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Fall back to the private workspace snapshot provider when the experimental
+  shared transport cannot connect, preserving inventory and account capacity
+  instead of rendering an empty unavailable Office.
 - Keep the experimental shared observer connected while another Codex client
   is active by opting out of content-bearing notification bursts that the
   metadata-only sidebar neither reads nor displays.

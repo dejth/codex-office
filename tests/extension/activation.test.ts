@@ -49,11 +49,15 @@ describe("extension activation", () => {
           provider?: {
             workspaceCwd?: () => string | undefined;
             requireWorkspace?: boolean;
+            createFallbackTransport?: () => unknown;
           };
         }
       | undefined;
     expect(registered?.provider?.workspaceCwd?.()).toBe("/synthetic/workspace");
     expect(registered?.provider?.requireWorkspace).toBe(true);
+    expect(registered?.provider?.createFallbackTransport).toEqual(
+      expect.any(Function),
+    );
     expect(vscodeMock.registerCommand).toHaveBeenCalledTimes(2);
     expect(context.subscriptions).toHaveLength(4);
   });
