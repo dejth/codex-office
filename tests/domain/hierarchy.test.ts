@@ -20,6 +20,7 @@ function agent(
     name: id,
     task: null,
     status: "idle",
+    lastActivityAt: null,
     usage: null,
     startedAt: START,
     ...overrides,

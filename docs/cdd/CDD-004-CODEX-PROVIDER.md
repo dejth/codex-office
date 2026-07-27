@@ -57,7 +57,8 @@ initializes without experimental APIs and polls persisted metadata through
 filter when VS Code has an open workspace. Discovery explicitly includes CLI,
 VS Code, exec, App Server, and every documented subagent source kind; relying
 on the upstream default would silently exclude subagents. Strict boundary
-schemas retain only hierarchy identity, timestamp, and status; previews, names,
+schemas retain only hierarchy identity, creation time, reported last-update
+time, and status; previews, names,
 turns, paths, Git metadata, and raw provider payloads are discarded.
 
 State-database subagent rows on the pinned version can omit canonical
@@ -94,6 +95,12 @@ realtime notifications; live state continues to come from bounded metadata
 polling. Missing, malformed, incompatible, or unloaded states remain
 `Unreported`. The mode is disabled by default and cannot be configured with a
 remote endpoint or arbitrary socket path.
+
+Codex CLI 0.145.0 reports `Thread.updatedAt` as Unix seconds for the last
+thread update. The adapter retains this content-free field as canonical
+nullable activity metadata and requests state-database pages in descending
+`updated_at` order. Shared reads may refresh it without turns. It is not proof
+that a thread is currently active.
 
 Failure to initialize the opt-in shared transport or complete its first
 bounded metadata poll retries through the existing private stdio provider.

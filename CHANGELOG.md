@@ -6,6 +6,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Sort intact Office agent groups by reported activity: active work first,
+  newest updates first within each class, and Unreported sessions last.
 - Add a disabled-by-default Shared App Server experiment that can overlay
   owner-only local thread status without resuming agents or reading turns. Its
   WebSocket client is bundled into the extension while the existing total VSIX

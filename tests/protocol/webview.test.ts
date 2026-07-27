@@ -7,16 +7,18 @@ import {
   parseWebviewToHostMessage,
   projectOfficeSnapshot,
   shouldAcceptHostSequence,
+  WEBVIEW_PROTOCOL_VERSION,
 } from "../../src/protocol/webview";
 import { buildAgentHierarchy } from "../../src/domain/hierarchy";
 import type { OfficeSnapshot } from "../../src/domain/model";
 import type { ProjectionResult } from "../../src/protocol/webview";
 
-const V = 1;
+const V = WEBVIEW_PROTOCOL_VERSION;
 const node = (id = "agent-1", children: unknown[] = []) => ({
   id,
   name: "Agent",
   status: "idle",
+  lastActivityAt: null,
   usage: null,
   children,
 });
@@ -110,7 +112,7 @@ describe("webview protocol", () => {
 
   it("returns content-free failures for version, type, and malformed fields", () => {
     expect(
-      parseWebviewToHostMessage({ protocolVersion: 2, type: "ready" }),
+      parseWebviewToHostMessage({ protocolVersion: 3, type: "ready" }),
     ).toEqual({
       ok: false,
       reason: "unsupported-version",
@@ -321,6 +323,7 @@ describe("webview protocol", () => {
           name: `${canary}-name`,
           task: `${canary}-task`,
           status: "idle",
+          lastActivityAt: snapshot.updatedAt,
           usage,
           children: [
             {
@@ -329,6 +332,7 @@ describe("webview protocol", () => {
               name: "raw child",
               task: canary,
               status: "unknown",
+              lastActivityAt: null,
               usage: null,
               children: [],
             },
@@ -365,6 +369,7 @@ describe("webview protocol", () => {
           displayName: "Kepler",
           task: "raw task",
           status: "unknown",
+          lastActivityAt: null,
           usage: null,
           children: [],
         },
@@ -387,6 +392,7 @@ describe("webview protocol", () => {
       name: "Raw duplicate",
       task: null,
       status: "idle" as const,
+      lastActivityAt: null,
       usage: null,
       startedAt: null,
     };
@@ -532,6 +538,7 @@ describe("webview protocol", () => {
           name: "raw",
           task: null,
           status: "idle",
+          lastActivityAt: null,
           usage: null,
           children: [],
         },
@@ -541,6 +548,7 @@ describe("webview protocol", () => {
           name: "raw duplicate",
           task: null,
           status: "idle",
+          lastActivityAt: null,
           usage: null,
           children: [],
         },

@@ -38,6 +38,7 @@ export interface AgentNode {
   displayName?: string;
   task: string | null;
   status: AgentStatus;
+  lastActivityAt: string | null;
   usage: TokenUsage | null;
   children: AgentNode[];
 }

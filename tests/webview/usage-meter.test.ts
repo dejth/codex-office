@@ -23,6 +23,7 @@ function agent(
     id,
     name: `Agent ${id}`,
     status: "thinking",
+    lastActivityAt: null,
     usage: values,
     children,
   };
