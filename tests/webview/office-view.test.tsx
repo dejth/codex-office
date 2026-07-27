@@ -44,7 +44,7 @@ describe("Office view", () => {
     expect(html.match(/tabindex="-1"/g)).toHaveLength(3);
     expect(html.match(/data-root="true"/g)).toHaveLength(1);
     expect(html.match(/data-root="false"/g)).toHaveLength(3);
-    expect(html).toContain('<span class="station-sign">Main</span>');
+    expect(html).toContain('<span class="station-sign">Root</span>');
     expect(html).toContain('<span class="station-sign">Sub</span>');
     expect(html).toContain('aria-label="Agent 1, Editing, Writing desk"');
     expect(html).not.toContain(">CO<");

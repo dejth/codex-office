@@ -34,6 +34,33 @@ export interface AgentProvider {
   subscribe(listener: (snapshot: OfficeSnapshot) => void): () => void;
 }
 
+const CONTENT_NOTIFICATION_OPT_OUTS = [
+  "turn/started",
+  "turn/completed",
+  "turn/diff/updated",
+  "turn/plan/updated",
+  "item/started",
+  "item/completed",
+  "rawResponseItem/completed",
+  "rawResponse/completed",
+  "item/agentMessage/delta",
+  "item/plan/delta",
+  "command/exec/outputDelta",
+  "process/outputDelta",
+  "item/commandExecution/outputDelta",
+  "item/commandExecution/terminalInteraction",
+  "item/fileChange/outputDelta",
+  "item/fileChange/patchUpdated",
+  "item/mcpToolCall/progress",
+  "item/reasoning/summaryTextDelta",
+  "item/reasoning/summaryPartAdded",
+  "item/reasoning/textDelta",
+  "thread/realtime/itemAdded",
+  "thread/realtime/transcript/delta",
+  "thread/realtime/transcript/done",
+  "thread/realtime/outputAudio/delta",
+] as const;
+
 export class CodexProvider implements AgentProvider {
   private listeners = new Set<(snapshot: OfficeSnapshot) => void>();
   private transport: CodexRpcTransport | undefined;
@@ -45,6 +72,7 @@ export class CodexProvider implements AgentProvider {
   private rateLimits: AccountRateLimits | null = null;
   private rateLimitsReadAt: number | null = null;
   private activeWorkspaceCwd: string | undefined;
+  private activeSharedAppServer = false;
 
   constructor(
     private readonly createTransport: () => CodexRpcTransport = () =>
@@ -52,6 +80,7 @@ export class CodexProvider implements AgentProvider {
     private readonly now: () => Date = () => new Date(),
     private readonly workspaceCwd?: string | (() => string | undefined),
     private readonly requireWorkspace = false,
+    private readonly sharedAppServer: boolean | (() => boolean) = false,
   ) {}
 
   async connect(): Promise<void> {
@@ -67,6 +96,10 @@ export class CodexProvider implements AgentProvider {
       return;
     }
     this.activeWorkspaceCwd = workspaceCwd;
+    this.activeSharedAppServer =
+      typeof this.sharedAppServer === "function"
+        ? this.sharedAppServer()
+        : this.sharedAppServer;
     const transport = this.createTransport();
     const generation = ++this.generation;
     this.transport = transport;
@@ -81,6 +114,7 @@ export class CodexProvider implements AgentProvider {
         capabilities: {
           experimentalApi: false,
           requestAttestation: false,
+          optOutNotificationMethods: [...CONTENT_NOTIFICATION_OPT_OUTS],
         },
       });
       if (generation !== this.generation || transport !== this.transport) {
@@ -124,6 +158,7 @@ export class CodexProvider implements AgentProvider {
     this.rateLimits = null;
     this.rateLimitsReadAt = null;
     this.activeWorkspaceCwd = undefined;
+    this.activeSharedAppServer = false;
     this.current = {
       ...this.current,
       rateLimits: null,
@@ -164,10 +199,13 @@ export class CodexProvider implements AgentProvider {
     if (!this.connected || transport === undefined)
       return cloneSnapshot(this.current);
     try {
-      const threads = await listPersistedThreads(
+      const persistedThreads = await listPersistedThreads(
         transport,
         this.activeWorkspaceCwd,
       );
+      const threads = this.activeSharedAppServer
+        ? await overlayLoadedThreadStatuses(transport, persistedThreads)
+        : persistedThreads;
       const observedAt = this.now();
       await this.refreshRateLimitsWhenDue(transport, observedAt);
       const hierarchy = buildAgentHierarchy(toHierarchyAgents(threads));
@@ -310,6 +348,22 @@ const threadListSchema = z
     nextCursor: cursor.nullable().optional().default(null),
   })
   .strip();
+const loadedThreadListSchema = z
+  .object({
+    data: z.array(id).max(1_000),
+    nextCursor: cursor.nullable().optional().default(null),
+  })
+  .strip();
+const threadReadStatusSchema = z
+  .object({
+    thread: z
+      .object({
+        id,
+        status: threadStatusSchema,
+      })
+      .strip(),
+  })
+  .strip();
 const rateLimitWindowSchema = z
   .object({
     usedPercent: z.number().finite().min(0).max(100),
@@ -373,6 +427,76 @@ async function listPersistedThreads(
     cursors.add(nextCursor);
   }
   throw new Error("provider page limit");
+}
+
+async function overlayLoadedThreadStatuses(
+  transport: CodexRpcTransport,
+  persistedThreads: readonly SafeThread[],
+): Promise<SafeThread[]> {
+  try {
+    const loadedIds = await listLoadedThreadIds(transport);
+    const persistedById = new Map(
+      persistedThreads.map((thread) => [thread.id, thread]),
+    );
+    const relevantIds = loadedIds.filter((threadId) =>
+      persistedById.has(threadId),
+    );
+    let nextIndex = 0;
+    const workers = Array.from(
+      { length: Math.min(4, relevantIds.length) },
+      async () => {
+        while (nextIndex < relevantIds.length) {
+          const threadId = relevantIds[nextIndex++]!;
+          const parsed = threadReadStatusSchema.safeParse(
+            await transport.request("thread/read", {
+              threadId,
+              includeTurns: false,
+            }),
+          );
+          if (!parsed.success || parsed.data.thread.id !== threadId) continue;
+          const existing = persistedById.get(threadId);
+          if (existing !== undefined) {
+            persistedById.set(threadId, {
+              ...existing,
+              status: parsed.data.thread.status,
+            });
+          }
+        }
+      },
+    );
+    await Promise.all(workers);
+    return persistedThreads.map(
+      (thread) => persistedById.get(thread.id) ?? thread,
+    );
+  } catch {
+    return [...persistedThreads];
+  }
+}
+
+async function listLoadedThreadIds(
+  transport: CodexRpcTransport,
+): Promise<string[]> {
+  const loaded = new Set<string>();
+  const cursors = new Set<string>();
+  let nextCursor: string | null = null;
+  for (let page = 0; page < 32; page += 1) {
+    const parsed = loadedThreadListSchema.safeParse(
+      await transport.request("thread/loaded/list", {
+        cursor: nextCursor,
+        limit: 100,
+      }),
+    );
+    if (!parsed.success) throw new Error("invalid loaded thread data");
+    for (const threadId of parsed.data.data) {
+      loaded.add(threadId);
+      if (loaded.size > 1_000) throw new Error("loaded thread limit");
+    }
+    nextCursor = parsed.data.nextCursor;
+    if (nextCursor === null) return [...loaded];
+    if (cursors.has(nextCursor)) throw new Error("loaded thread cursor cycle");
+    cursors.add(nextCursor);
+  }
+  throw new Error("loaded thread page limit");
 }
 
 function sameSafeThread(left: SafeThread, right: SafeThread): boolean {

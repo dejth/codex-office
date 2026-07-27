@@ -7,7 +7,7 @@ import {
 } from "../../src/providers/codex/transport";
 
 const INITIALIZE = {
-  userAgent: "Codex Desktop/0.138.0 synthetic",
+  userAgent: "Codex Desktop/0.145.0 synthetic",
   codexHome: "/private/never-retain",
 };
 const NOW = new Date("2026-07-23T04:00:00.000Z");
@@ -184,9 +184,23 @@ describe("CodexProvider", () => {
         capabilities: {
           experimentalApi: false,
           requestAttestation: false,
+          optOutNotificationMethods: expect.arrayContaining([
+            "item/started",
+            "item/agentMessage/delta",
+            "item/commandExecution/outputDelta",
+            "item/fileChange/patchUpdated",
+            "item/reasoning/textDelta",
+            "thread/realtime/transcript/delta",
+          ]),
         },
       },
     });
+    const initialize = transport.calls[0]?.params as {
+      capabilities?: { optOutNotificationMethods?: string[] };
+    };
+    expect(
+      new Set(initialize.capabilities?.optOutNotificationMethods).size,
+    ).toBe(initialize.capabilities?.optOutNotificationMethods?.length);
     expect(transport.calls).toContainEqual({ method: "initialized" });
     expect(transport.calls).toContainEqual({
       method: "thread/list",
@@ -208,6 +222,97 @@ describe("CodexProvider", () => {
     expect(JSON.stringify(snapshot)).not.toMatch(
       /private|prompt|preview|cwd|turns/,
     );
+  });
+
+  it("overlays shared loaded-thread status without resuming or retaining content", async () => {
+    const transport = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+      thread("thread-child", "thread-root", { type: "notLoaded" }),
+    )
+      .queue("thread/loaded/list", {
+        data: ["thread-root", "thread-child", "outside-workspace"],
+        nextCursor: null,
+      })
+      .queue(
+        "thread/read",
+        {
+          thread: {
+            id: "thread-root",
+            status: { type: "active", activeFlags: [] },
+            cwd: "/private/never-retain",
+            turns: [{ prompt: "must be discarded" }],
+          },
+        },
+        {
+          thread: {
+            id: "thread-child",
+            status: {
+              type: "active",
+              activeFlags: ["waitingOnApproval"],
+            },
+            preview: "must be discarded",
+          },
+        },
+      );
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+      "/synthetic/workspace",
+      false,
+      true,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(snapshot.agents[0]?.status).toBe("thinking");
+    expect(snapshot.agents[0]?.children[0]?.status).toBe("waiting-approval");
+    expect(
+      transport.calls.filter(({ method }) => method === "thread/read"),
+    ).toEqual([
+      {
+        method: "thread/read",
+        params: { threadId: "thread-root", includeTurns: false },
+      },
+      {
+        method: "thread/read",
+        params: { threadId: "thread-child", includeTurns: false },
+      },
+    ]);
+    expect(JSON.stringify(snapshot)).not.toMatch(
+      /outside-workspace|private|prompt|preview|cwd|turns/,
+    );
+  });
+
+  it("fails closed to persisted unreported status when shared metadata is malformed", async () => {
+    const transport = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+    )
+      .queue("thread/loaded/list", {
+        data: ["thread-root"],
+        nextCursor: null,
+      })
+      .queue("thread/read", {
+        thread: {
+          id: "thread-root",
+          status: { type: "future-status", raw: "must be discarded" },
+          turns: [{ prompt: "must be discarded" }],
+        },
+      });
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+      "/synthetic/workspace",
+      false,
+      true,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(snapshot.connection).toBe("connected");
+    expect(snapshot.agents[0]?.status).toBe("unknown");
+    expect(JSON.stringify(snapshot)).not.toMatch(/future-status|prompt|turns/);
   });
 
   it("reconstructs state-db subagent edges from versioned spawn metadata", async () => {

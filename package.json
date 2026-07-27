@@ -65,6 +65,11 @@
     "configuration": {
       "title": "Codex Office",
       "properties": {
+        "codexOffice.experimentalSharedAppServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: observe status from an owner-only Codex App Server Unix socket. Requires a running shared daemon and a VS Code reload."
+        },
         "codexOffice.reducedMotion": {
           "type": "boolean",
           "default": false,
@@ -96,6 +101,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/vscode": "^1.96.0",
+    "@types/ws": "8.18.1",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.30.0",
@@ -103,6 +109,7 @@
     "prettier": "^3.5.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.35.0",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.0",
+    "ws": "8.18.3"
   }
 }

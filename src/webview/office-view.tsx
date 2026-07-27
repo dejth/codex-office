@@ -346,7 +346,7 @@ const OfficeAgent = memo(function OfficeAgent({
         }
       }}
     >
-      <span className="station-sign">{level === 1 ? "Main" : "Sub"}</span>
+      <span className="station-sign">{level === 1 ? "Root" : "Sub"}</span>
       <span
         key={transitionRevision}
         className="station-scene"

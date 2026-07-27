@@ -25,7 +25,7 @@ export interface BundledSchemaEvidence {
 
 export const DEFAULT_BUNDLED_SCHEMA_EVIDENCE: BundledSchemaEvidence =
   Object.freeze({
-    pinnedVersion: "0.138.0",
+    pinnedVersion: "0.145.0",
     requestMethods: Object.freeze([...REQUIRED_REQUEST_METHODS]),
     notificationMethods: Object.freeze([...REQUIRED_NOTIFICATION_METHODS]),
   });
@@ -44,7 +44,7 @@ export type CapabilityDiagnostic =
 
 export interface CodexCapabilityResult {
   status: "partial" | "degraded";
-  version: "0.138.0" | null;
+  version: "0.145.0" | null;
   mode: "snapshot-polling";
   experimentalApi: false;
   capabilities: {
@@ -66,7 +66,7 @@ const bundledSchema = z.object({
   notificationMethods: z.array(boundedMethod).max(64),
 });
 
-/** Negotiates the hierarchy-only polling adapter pinned by ADR-0003. */
+/** Negotiates the hierarchy-only adapter pinned by ADR-0005. */
 export function negotiateCodexCapabilities(
   untrustedInitialize: unknown,
   schemaEvidence: BundledSchemaEvidence = DEFAULT_BUNDLED_SCHEMA_EVIDENCE,
@@ -82,7 +82,7 @@ export function negotiateCodexCapabilities(
   }
 
   const runtimeVersion = parseRuntimeVersion(initialize.data.userAgent);
-  if (runtimeVersion !== "0.138.0") {
+  if (runtimeVersion !== "0.145.0") {
     diagnostics.push({ code: "unsupported-runtime-version" });
   }
   if (runtimeVersion !== null && runtimeVersion !== schema.data.pinnedVersion) {
@@ -104,7 +104,7 @@ export function negotiateCodexCapabilities(
   const hierarchyPolling = diagnostics.length === 0;
   diagnostics.push({ code: "usage-source-unavailable" });
   return makeResult(
-    runtimeVersion === "0.138.0" ? runtimeVersion : null,
+    runtimeVersion === "0.145.0" ? runtimeVersion : null,
     hierarchyPolling,
     diagnostics,
   );
@@ -131,7 +131,7 @@ function parseRuntimeVersion(userAgent: string): string | null {
 }
 
 function makeResult(
-  version: "0.138.0" | null,
+  version: "0.145.0" | null,
   hierarchyPolling: boolean,
   diagnostics: CapabilityDiagnostic[],
 ): CodexCapabilityResult {
