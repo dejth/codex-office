@@ -46,6 +46,11 @@ interface PositionedAgent {
   level: number;
 }
 
+interface ActivityRank {
+  priority: number;
+  timestamp: number;
+}
+
 type OfficeFilter = "all" | "active" | "waiting" | "done" | "unreported";
 
 const FILTERS: ReadonlyArray<{ id: OfficeFilter; label: string }> = [
@@ -89,11 +94,70 @@ export function nextOfficeFocusId(
   return currentId;
 }
 
+const ACTIVE_STATUSES = new Set<WebviewAgent["status"]>([
+  "thinking",
+  "reading",
+  "editing",
+  "running-command",
+]);
+
+function statusPriority(status: WebviewAgent["status"]): number {
+  if (ACTIVE_STATUSES.has(status)) return 0;
+  if (status === "waiting-approval" || status === "failed") return 1;
+  if (status === "idle" || status === "completed") return 2;
+  return 3;
+}
+
+function ownActivityRank(agent: WebviewAgent): ActivityRank {
+  const parsed =
+    agent.lastActivityAt === null
+      ? Number.NEGATIVE_INFINITY
+      : Date.parse(agent.lastActivityAt);
+  return {
+    priority: statusPriority(agent.status),
+    timestamp: Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY,
+  };
+}
+
+function compareActivityRank(left: ActivityRank, right: ActivityRank): number {
+  return left.priority - right.priority || right.timestamp - left.timestamp;
+}
+
+/** Orders sibling groups by their most relevant reported activity. */
+export function orderOfficeAgents(
+  agents: readonly WebviewAgent[],
+): WebviewAgent[] {
+  const ranks = new Map<string, ActivityRank>();
+  const rankSubtree = (agent: WebviewAgent): ActivityRank => {
+    let rank = ownActivityRank(agent);
+    for (const child of agent.children) {
+      const childRank = rankSubtree(child);
+      if (compareActivityRank(childRank, rank) < 0) rank = childRank;
+    }
+    ranks.set(agent.id, rank);
+    return rank;
+  };
+  for (const agent of agents) rankSubtree(agent);
+
+  const sortGroup = (group: readonly WebviewAgent[]): WebviewAgent[] =>
+    [...group]
+      .sort((left, right) => {
+        const ranked = compareActivityRank(
+          ranks.get(left.id)!,
+          ranks.get(right.id)!,
+        );
+        return ranked || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
+      })
+      .map((agent) => ({ ...agent, children: sortGroup(agent.children) }));
+  return sortGroup(agents);
+}
+
 function flattenOfficeAgents(
   agents: readonly WebviewAgent[],
 ): PositionedAgent[] {
   const result: PositionedAgent[] = [];
-  const stack = [...agents].reverse().map((agent) => ({ agent, level: 1 }));
+  const ordered = orderOfficeAgents(agents);
+  const stack = [...ordered].reverse().map((agent) => ({ agent, level: 1 }));
   while (stack.length > 0) {
     const current = stack.pop()!;
     result.push(current);

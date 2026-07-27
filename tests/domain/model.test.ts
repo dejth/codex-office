@@ -9,6 +9,7 @@ describe("AgentNode contract", () => {
       name: "Explorer",
       task: null,
       status: "reading",
+      lastActivityAt: null,
       usage: null,
       children: [],
     };
