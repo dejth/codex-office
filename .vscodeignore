@@ -1,5 +1,7 @@
 .github/**
+.vscode/**
 .vscode-test/**
+artifacts/**
 coverage/**
 docs/**
 node_modules/**

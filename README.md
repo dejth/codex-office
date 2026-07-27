@@ -1,12 +1,53 @@
 # Codex Office
 
-> Watch your Codex agents work. Understand where the tokens go.
+> Watch local Codex agents work — privately, inside VS Code.
 
-Codex Office is a privacy-first VS Code extension that visualizes Codex main agents and nested subagents in an animated sidebar, with a meter view for reported token usage.
+Codex Office is a local-first, read-only VS Code sidebar for visualizing Codex
+sessions, nested subagents, and basic live status with animated pixel-art
+characters.
 
-## Status
+![Codex Office agent room](assets/marketplace/agent-room.png)
 
-This repository is a production-minded starter kit. The UI and provider integration are intentionally minimal; product decisions, contracts, test fixtures, agent workflows, and release gates are documented before implementation begins.
+## What it shows
+
+- Workspace-scoped root sessions and reconstructed subagent hierarchy.
+- Basic live states from the optional Shared observer: Working, Waiting,
+  Failed, and Idle.
+- Reported account-capacity windows and reset time when Codex provides them.
+- Honest `Unreported` labels when current status is unavailable.
+
+Account capacity is not token billing, cost, credits, or per-agent usage.
+Codex Office does not claim per-agent token totals because the supported
+content-free observer does not report them.
+
+## Privacy and safety
+
+- Runs locally and makes no telemetry or remote persistence calls.
+- Never projects prompts, responses, commands, file contents, or workspace
+  paths into the sidebar.
+- Observes only; it cannot steer, stop, resume, or submit work to an agent.
+- Uses strict, bounded provider schemas and fails closed when evidence is
+  incomplete.
+
+See [SECURITY.md](SECURITY.md) and the
+[privacy requirements](docs/security/PRIVACY.md) for the full policy.
+
+## Requirements and live status
+
+- VS Code `^1.96.0` is declared. The Marketplace beta release record states
+  which versions have actually been tested.
+- Persisted workspace inventory works without experimental configuration.
+- Basic live status is currently pinned to Codex CLI `0.145.0` and requires
+  its owner-only managed App Server daemon.
+
+To opt in, enable **Codex Office › Experimental Shared App Server** in VS Code
+settings, ensure the supported local Codex daemon is already running, then
+reload VS Code. The extension never starts, stops, or configures that daemon.
+If the shared observer is unavailable, the room safely falls back to persisted
+inventory and labels status as `Unreported`.
+
+This integration is experimental and disabled by default because the upstream
+local transport may change.
 
 ## Product principles
 
@@ -17,6 +58,13 @@ This repository is a production-minded starter kit. The UI and provider integrat
 - Provider/domain/UI boundaries must stay independently testable.
 
 ## Quick start
+
+### Install a reviewed VSIX
+
+In VS Code, choose **Extensions: Install from VSIX…**, select the reviewed
+release artifact, and open **Codex Office** from the Activity Bar.
+
+### Develop locally
 
 ```bash
 corepack enable
@@ -44,9 +92,12 @@ extensions so their output does not pollute the shared Debug Console.
 - [Marketplace publishing](docs/release/MARKETPLACE.md)
 - [Agent operating model](docs/agents/MULTI_AGENT_PLAYBOOK.md)
 
-## Privacy
+## Current limitations
 
-Codex Office must not send source code, prompts, transcript content, workspace paths, or usage data off-device. See [SECURITY.md](SECURITY.md) and [privacy requirements](docs/security/PRIVACY.md).
+- Live status is basic lifecycle state, not tool-level activity.
+- Sessions not loaded in the shared daemon remain `Unreported`.
+- Per-agent token usage is intentionally unavailable.
+- Marketplace publication remains a separate human approval gate.
 
 ## Contributing
 

@@ -4,7 +4,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-27
+
 ### Added
+
+- Prepare honest Marketplace beta metadata, a deterministic production-mascot
+  icon, and a sanitized listing screenshot generated from synthetic data.
 
 - Rework the live Agent room around Working, Waiting, Failed, Idle, and
   Unreported semantics; compact repeated card chrome and collapse large
