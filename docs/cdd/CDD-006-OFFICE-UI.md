@@ -40,6 +40,11 @@ stable opaque ID breaks ties. A descendant can promote its whole group, but the
 parent remains before its children. Missing activity time sorts last within its
 class and is never estimated.
 
+Status filters apply to complete root groups rather than bypassing roots. A
+group remains visible when its root or any descendant matches, preserving the
+relationship context. When no group matches, the Office renders a readable
+filter-specific empty state and exposes no hidden cards to keyboard focus.
+
 ## Provider and empty states
 
 - Production UI describes provider-backed content as local sessions. It never
