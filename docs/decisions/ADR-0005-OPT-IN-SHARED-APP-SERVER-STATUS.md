@@ -36,6 +36,10 @@ default production dependency.
 - Connect only when the endpoint is a real socket owned by the current user and
   has no group or other permissions. Otherwise fall back to the existing
   private stdio provider.
+- Treat the setting as connection intent and perform the ownership/permission
+  check once, inside the Unix transport at connection time. Do not use a
+  duplicate activation-time preflight that can incorrectly select stdio before
+  the secure transport has attempted the endpoint.
 - The extension does not start, stop, restart, or configure the daemon.
 - If the shared transport cannot initialize or complete its first bounded
   metadata poll, retry through the existing private stdio snapshot provider.

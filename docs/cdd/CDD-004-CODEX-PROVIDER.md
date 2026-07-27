@@ -96,6 +96,13 @@ polling. Missing, malformed, incompatible, or unloaded states remain
 `Unreported`. The mode is disabled by default and cannot be configured with a
 remote endpoint or arbitrary socket path.
 
+The setting expresses user intent to attempt the shared transport. Activation
+does not duplicate the filesystem security gate before transport selection;
+the Unix transport itself validates that the default endpoint is a real socket,
+is owned by the current user, and has no group or other permissions before it
+opens a connection. Validation failure follows the same private-inventory
+fallback path.
+
 Codex CLI 0.145.0 reports `Thread.updatedAt` as Unix seconds for the last
 thread update. The adapter retains this content-free field as canonical
 nullable activity metadata and requests state-database pages in descending

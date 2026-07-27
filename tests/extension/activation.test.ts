@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const configuration = vi.hoisted(() => ({ sharedAppServer: false }));
 
 const vscodeMock = vi.hoisted(() => ({
   registerWebviewViewProvider: vi.fn((...args: [string, unknown]) => {
@@ -8,7 +10,11 @@ const vscodeMock = vi.hoisted(() => ({
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
   executeCommand: vi.fn(),
   getConfiguration: vi.fn(() => ({
-    get: vi.fn((_key: string, fallback: unknown) => fallback),
+    get: vi.fn((key: string, fallback: unknown) =>
+      key === "experimentalSharedAppServer"
+        ? configuration.sharedAppServer
+        : fallback,
+    ),
   })),
 }));
 
@@ -29,8 +35,17 @@ vi.mock("vscode", () => ({
 }));
 
 import { activate } from "../../src/extension/extension";
+import {
+  CodexStdioTransport,
+  CodexUnixSocketTransport,
+} from "../../src/providers/codex/transport";
 
 describe("extension activation", () => {
+  afterEach(() => {
+    configuration.sharedAppServer = false;
+    vi.clearAllMocks();
+  });
+
   it("registers the sidebar, commands, and provider disposal", () => {
     const context = {
       extensionUri: {},
@@ -60,5 +75,33 @@ describe("extension activation", () => {
     );
     expect(vscodeMock.registerCommand).toHaveBeenCalledTimes(2);
     expect(context.subscriptions).toHaveLength(4);
+  });
+
+  it("honors shared observer intent and leaves socket validation to the transport", () => {
+    configuration.sharedAppServer = true;
+    const context = {
+      extensionUri: {},
+      subscriptions: [] as Array<{ dispose(): unknown }>,
+    };
+
+    activate(context as never);
+
+    const registered = vscodeMock.registerWebviewViewProvider.mock
+      .calls[0]?.[1] as
+      | {
+          provider?: {
+            createTransport?: () => unknown;
+            createFallbackTransport?: () => unknown;
+            sharedAppServer?: () => boolean;
+          };
+        }
+      | undefined;
+    expect(registered?.provider?.sharedAppServer?.()).toBe(true);
+    expect(registered?.provider?.createTransport?.()).toBeInstanceOf(
+      CodexUnixSocketTransport,
+    );
+    expect(registered?.provider?.createFallbackTransport?.()).toBeInstanceOf(
+      CodexStdioTransport,
+    );
   });
 });
