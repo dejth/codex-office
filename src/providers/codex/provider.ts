@@ -81,6 +81,7 @@ export class CodexProvider implements AgentProvider {
     private readonly workspaceCwd?: string | (() => string | undefined),
     private readonly requireWorkspace = false,
     private readonly sharedAppServer: boolean | (() => boolean) = false,
+    private readonly createFallbackTransport?: () => CodexRpcTransport,
   ) {}
 
   async connect(): Promise<void> {
@@ -96,11 +97,30 @@ export class CodexProvider implements AgentProvider {
       return;
     }
     this.activeWorkspaceCwd = workspaceCwd;
-    this.activeSharedAppServer =
+    const sharedAppServer =
       typeof this.sharedAppServer === "function"
         ? this.sharedAppServer()
         : this.sharedAppServer;
-    const transport = this.createTransport();
+    const connected = await this.connectTransport(
+      this.createTransport(),
+      sharedAppServer,
+    );
+    if (
+      connected ||
+      !sharedAppServer ||
+      this.createFallbackTransport === undefined ||
+      this.currentDiagnostic !== "transport-unavailable"
+    ) {
+      return;
+    }
+    await this.connectTransport(this.createFallbackTransport(), false);
+  }
+
+  private async connectTransport(
+    transport: CodexRpcTransport,
+    sharedAppServer: boolean,
+  ): Promise<boolean> {
+    this.activeSharedAppServer = sharedAppServer;
     const generation = ++this.generation;
     this.transport = transport;
     try {
@@ -119,7 +139,7 @@ export class CodexProvider implements AgentProvider {
       });
       if (generation !== this.generation || transport !== this.transport) {
         transport.stop();
-        return;
+        return false;
       }
       const capability = negotiateCodexCapabilities(initialize);
       if (!capability.capabilities.hierarchyPolling) {
@@ -131,12 +151,14 @@ export class CodexProvider implements AgentProvider {
         this.setDegraded();
         transport.stop();
         this.transport = undefined;
-        return;
+        this.connected = false;
+        return false;
       }
       transport.notify("initialized");
       this.connected = true;
       this.currentDiagnostic = "none";
       await this.poll(generation);
+      return this.connected && this.transport === transport;
     } catch (error) {
       transport.stop();
       if (generation === this.generation && transport === this.transport) {
@@ -145,6 +167,7 @@ export class CodexProvider implements AgentProvider {
         this.currentDiagnostic = diagnosticFromError(error);
         this.setDegraded();
       }
+      return false;
     }
   }
 

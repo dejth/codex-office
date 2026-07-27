@@ -95,6 +95,11 @@ polling. Missing, malformed, incompatible, or unloaded states remain
 `Unreported`. The mode is disabled by default and cannot be configured with a
 remote endpoint or arbitrary socket path.
 
+Failure to initialize the opt-in shared transport or complete its first
+bounded metadata poll retries through the existing private stdio provider.
+This preserves workspace inventory and reported account capacity while keeping
+all fallback agent states `Unreported`; fallback data is never labeled live.
+
 Root classification also remains evidence-based. A sanitized 0.145.0 probe
 found 21 workspace-scoped `vscode` sessions with no canonical or spawn-source
 parent field. They are separate root sessions, not nineteen or twenty inferred

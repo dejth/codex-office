@@ -24,6 +24,7 @@ export function activate(context: vscode.ExtensionContext): void {
       () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       true,
       useSharedAppServer,
+      () => new CodexStdioTransport(),
     ),
   );
   context.subscriptions.push(
