@@ -103,6 +103,14 @@ is owned by the current user, and has no group or other permissions before it
 opens a connection. Validation failure follows the same private-inventory
 fallback path.
 
+The WebSocket client addresses that verified endpoint with its native
+`ws+unix:` URL form. Passing a Unix connection callback through ordinary
+WebSocket options is prohibited: `ws` normalizes those options internally and
+can silently replace the intended Unix endpoint with `localhost` inside an
+Extension Host. Host-local lifecycle logs may record only source, stage,
+bounded provider diagnostic, and bounded transport error code; they never
+record paths, identifiers, payloads, prompts, or session content.
+
 Codex CLI 0.145.0 reports `Thread.updatedAt` as Unix seconds for the last
 thread update. The adapter retains this content-free field as canonical
 nullable activity metadata and requests state-database pages in descending

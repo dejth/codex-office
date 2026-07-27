@@ -251,12 +251,11 @@ describe("CodexUnixSocketTransport", () => {
       },
     });
     transport.start();
-    expect(socketAddress).toBe("ws://localhost/rpc");
+    expect(socketAddress).toBe("ws+unix:///synthetic/control.sock:/rpc");
     expect(socketOptions).toMatchObject({
       handshakeTimeout: 10_000,
       maxPayload: 1_048_576,
       perMessageDeflate: false,
-      createConnection: expect.any(Function),
     });
     const response = transport.request("thread/loaded/list", {});
     socket.open();

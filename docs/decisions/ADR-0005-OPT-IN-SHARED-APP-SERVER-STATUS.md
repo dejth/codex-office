@@ -115,11 +115,16 @@ The local endpoint was first verified on 0.138.0 as an owner-only Unix socket
 - thread/turn/item notifications remain connection/subscription scoped and are
   not used by this decision.
 
-The 0.145.0 compatibility verification also found that Node's `ws+unix:` URL
-shortcut produces a handshake rejected by the current App Server. Connecting
-to the fixed logical endpoint `ws://localhost/rpc` while supplying an explicit
-Unix-domain `createConnection` succeeds and preserves the same local-only
-socket boundary. A regression test pins this connection shape.
+The installed Extension Host verification on 2026-07-27 corrected an earlier
+transport conclusion. Passing an explicit Unix-domain `createConnection`
+through ordinary WebSocket options worked in a standalone probe but failed in
+the Extension Host because `ws` normalizes client options and can replace the
+intended endpoint with `localhost`. The native
+`ws+unix:///owner-only/socket:/rpc` address succeeds for both the WebSocket
+upgrade and `initialize` RPC against Codex CLI 0.145.0. A regression test pins
+this connection shape. Bounded host-local lifecycle diagnostics exposed only
+source, stage, provider diagnostic, and transport error code while confirming
+the failure; no endpoint path or session data was logged.
 
 On 2026-07-27, a repeated content-free probe confirmed that the secured 0.145.0
 daemon was healthy while `thread/loaded/list` returned zero identifiers. This

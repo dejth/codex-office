@@ -1,6 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { accessSync, constants, lstatSync } from "node:fs";
-import { createConnection } from "node:net";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 
@@ -161,8 +160,7 @@ export class CodexUnixSocketTransport implements CodexRpcTransport {
       throw new CodexTransportError("socket-permissions");
     }
 
-    const socket = this.createSocket("ws://localhost/rpc", {
-      createConnection: () => createConnection({ path: this.socketPath }),
+    const socket = this.createSocket(`ws+unix://${this.socketPath}:/rpc`, {
       handshakeTimeout: this.requestTimeoutMs,
       maxPayload: MAX_LINE_BYTES,
       perMessageDeflate: false,
