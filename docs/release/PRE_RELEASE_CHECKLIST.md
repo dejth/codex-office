@@ -13,6 +13,9 @@
 - [x] Version 0.1.0, candidate filename, and SHA-256 checksum agree; no tag has
       been created.
 - [x] Rollback owner and manual first-release path are recorded.
-- [ ] Publisher identity and extension-name availability are confirmed in the
+- [x] Publisher identity and extension-name availability are confirmed in the
       Marketplace portal.
-- [ ] Human explicitly approves Marketplace publication.
+- [x] Human explicitly approves Marketplace publication.
+
+Published as `dejth.codex-office` version `0.1.0` on 2026-07-27. Production
+source was promoted from `develop` to `main` in PR #59 after CI passed.

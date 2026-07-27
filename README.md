@@ -59,6 +59,12 @@ local transport may change.
 
 ## Quick start
 
+### Install from the Marketplace
+
+Install [Codex Office](https://marketplace.visualstudio.com/items?itemName=dejth.codex-office)
+from the Visual Studio Marketplace, then open **Codex Office** from the
+Activity Bar.
+
 ### Install a reviewed VSIX
 
 In VS Code, choose **Extensions: Install from VSIX…**, select the reviewed
@@ -97,7 +103,6 @@ extensions so their output does not pollute the shared Debug Console.
 - Live status is basic lifecycle state, not tool-level activity.
 - Sessions not loaded in the shared daemon remain `Unreported`.
 - Per-agent token usage is intentionally unavailable.
-- Marketplace publication remains a separate human approval gate.
 
 ## Contributing
 
