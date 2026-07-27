@@ -6,6 +6,9 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Retry an explicitly enabled shared observer after a bounded cooldown so a
+  transient startup failure does not leave the Office on persisted inventory
+  for the rest of the VS Code window.
 - Show whether Agent status comes from the shared observer or persisted
   inventory without exposing transport details.
 - Sort intact Office agent groups by reported activity: active work first,

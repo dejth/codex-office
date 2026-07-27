@@ -61,6 +61,8 @@ const CONTENT_NOTIFICATION_OPT_OUTS = [
   "thread/realtime/outputAudio/delta",
 ] as const;
 
+const SHARED_RETRY_COOLDOWN_MS = 10_000;
+
 export class CodexProvider implements AgentProvider {
   private listeners = new Set<(snapshot: OfficeSnapshot) => void>();
   private transport: CodexRpcTransport | undefined;
@@ -73,6 +75,7 @@ export class CodexProvider implements AgentProvider {
   private rateLimitsReadAt: number | null = null;
   private activeWorkspaceCwd: string | undefined;
   private activeSharedAppServer = false;
+  private nextSharedRetryAtMs: number | null = null;
 
   constructor(
     private readonly createTransport: () => CodexRpcTransport = () =>
@@ -114,6 +117,7 @@ export class CodexProvider implements AgentProvider {
       return;
     }
     await this.connectTransport(this.createFallbackTransport(), false);
+    this.scheduleSharedRetry();
   }
 
   private async connectTransport(
@@ -182,6 +186,7 @@ export class CodexProvider implements AgentProvider {
     this.rateLimitsReadAt = null;
     this.activeWorkspaceCwd = undefined;
     this.activeSharedAppServer = false;
+    this.nextSharedRetryAtMs = null;
     this.current = {
       ...this.current,
       rateLimits: null,
@@ -194,9 +199,48 @@ export class CodexProvider implements AgentProvider {
   }
 
   async refresh(): Promise<OfficeSnapshot> {
+    if (await this.retrySharedObserverWhenDue()) {
+      return cloneSnapshot(this.current);
+    }
     return this.connected
       ? this.poll(this.generation)
       : cloneSnapshot(this.current);
+  }
+
+  private async retrySharedObserverWhenDue(): Promise<boolean> {
+    const sharedRequested =
+      typeof this.sharedAppServer === "function"
+        ? this.sharedAppServer()
+        : this.sharedAppServer;
+    if (
+      !this.connected ||
+      this.activeSharedAppServer ||
+      !sharedRequested ||
+      this.createFallbackTransport === undefined
+    ) {
+      return false;
+    }
+    const now = this.now().getTime();
+    if (this.nextSharedRetryAtMs !== null && now < this.nextSharedRetryAtMs) {
+      return false;
+    }
+
+    this.transport?.stop();
+    this.transport = undefined;
+    this.connected = false;
+    const recovered = await this.connectTransport(this.createTransport(), true);
+    if (recovered) {
+      this.nextSharedRetryAtMs = null;
+      return true;
+    }
+
+    await this.connectTransport(this.createFallbackTransport(), false);
+    this.scheduleSharedRetry();
+    return true;
+  }
+
+  private scheduleSharedRetry(): void {
+    this.nextSharedRetryAtMs = this.now().getTime() + SHARED_RETRY_COOLDOWN_MS;
   }
 
   diagnostic(): ProviderDiagnostic {
