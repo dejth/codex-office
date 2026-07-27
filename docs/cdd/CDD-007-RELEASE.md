@@ -1,6 +1,6 @@
 # CDD-007 — Release Contract
 
-Status: Draft
+Status: Verified
 
 A release is eligible only when CI is green, version/changelog agree, VSIX installs in a clean profile, permissions and package contents are reviewed, privacy copy is accurate, and a human approves publication.
 
@@ -13,3 +13,7 @@ install, disable, and uninstall harness. Passing these engineering gates does
 not make a release eligible by itself; minimum-version, visual matrix, upgrade,
 artifact, and human publication gates remain recorded in
 `docs/release/V0.1_VALIDATION.md`.
+
+The 0.1.0 release completed these gates on 2026-07-27 and was published
+manually as `dejth.codex-office` after explicit maintainer approval. This
+verification does not authorize future releases.

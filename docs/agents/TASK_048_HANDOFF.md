@@ -1,9 +1,9 @@
 # Agent Handoff
 
 - Task / owner: Task 048 / Dex
-- Outcome: Prepared a truthful, reproducible Marketplace beta 0.1.0 candidate
-  without publishing, tagging, creating credentials, or mutating Marketplace
-  state.
+- Outcome: Prepared a truthful, reproducible Marketplace beta 0.1.0 candidate.
+  The maintainer later reviewed it, explicitly approved manual publication,
+  and promoted the reviewed source to `main` through PR #59.
 - Files changed: Package metadata, public README and changelog, deterministic
   Marketplace assets/preview source, release validation/checklist, checksum,
   release metadata test, and Task 048.
@@ -19,11 +19,10 @@
   listing screenshot is generated from a synthetic fixture and contains no
   prompt, path, chat, identity, or real usage data.
 - Known limitations: Upgrade from a genuine older release remains untested.
-  Marketplace publisher/name availability and publication remain human-only
-  gates.
-- Follow-ups / dependencies: Review the candidate listing/artifact, confirm
-  publisher/name availability, and obtain separate explicit publication
-  approval.
+  Per-agent token usage remains unavailable because the accepted content-free
+  observer does not report it.
+- Follow-ups / dependencies: Track a privacy-safe per-agent usage capability
+  only if upstream exposes a supported content-free API.
 - Exact reviewer reproduction steps: Run `pnpm check`, package
   `artifacts/codex-office-0.1.0.vsix`, run the budget checker with `--vsix`, run
   the clean-profile smoke script, and compare `shasum -a 256` with the checked-in

@@ -4,6 +4,11 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- Record the maintainer-approved Marketplace publication of `dejth.codex-office`
+  0.1.0 and promotion of the reviewed release source to `main`.
+
 ## [0.1.0] - 2026-07-27
 
 ### Added
