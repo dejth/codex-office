@@ -37,6 +37,10 @@ default production dependency.
   has no group or other permissions. Otherwise fall back to the existing
   private stdio provider.
 - The extension does not start, stop, restart, or configure the daemon.
+- If the shared transport cannot initialize or complete its first bounded
+  metadata poll, retry through the existing private stdio snapshot provider.
+  Fallback inventory remains `Unreported`; it is never presented as live
+  shared status.
 - Preserve the persisted, exact-workspace state-database inventory as the
   authoritative hierarchy. Use `thread/loaded/list`, intersect the identifiers
   with that bounded inventory, and call `thread/read` with
