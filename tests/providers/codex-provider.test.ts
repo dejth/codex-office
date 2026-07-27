@@ -327,6 +327,86 @@ describe("CodexProvider", () => {
     expect(provider.diagnostic()).toBe("none");
   });
 
+  it("recovers the shared observer on refresh after the retry cooldown", async () => {
+    let now = NOW;
+    const unavailableShared = new FakeTransport();
+    unavailableShared.start = () => {
+      unavailableShared.started += 1;
+      throw new CodexTransportError("socket-unavailable");
+    };
+    const recoveredShared = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+    )
+      .queue("thread/loaded/list", {
+        data: ["thread-root"],
+        nextCursor: null,
+      })
+      .queue("thread/read", {
+        thread: {
+          id: "thread-root",
+          updatedAt: 1_753_243_500,
+          status: { type: "active", activeFlags: [] },
+        },
+      });
+    const fallback = configuredTransport(
+      thread("thread-root", null, { type: "notLoaded" }),
+    );
+    const sharedTransports = [unavailableShared, recoveredShared];
+    const provider = new CodexProvider(
+      () => sharedTransports.shift()!,
+      () => now,
+      "/synthetic/workspace",
+      false,
+      true,
+      () => fallback,
+    );
+
+    await provider.connect();
+    expect((await provider.snapshot()).statusSource).toBe(
+      "persisted-inventory",
+    );
+
+    now = new Date(NOW.getTime() + 10_001);
+    const recovered = await provider.refresh();
+
+    expect(fallback.stopped).toBeGreaterThan(0);
+    expect(recovered.statusSource).toBe("shared-observer");
+    expect(recovered.agents[0]?.status).toBe("thinking");
+  });
+
+  it("keeps persisted inventory when a scheduled shared retry also fails", async () => {
+    let now = NOW;
+    const failingShared = Array.from({ length: 2 }, () => {
+      const transport = new FakeTransport();
+      transport.start = () => {
+        transport.started += 1;
+        throw new CodexTransportError("socket-unavailable");
+      };
+      return transport;
+    });
+    const fallbacks = Array.from({ length: 2 }, () =>
+      configuredTransport(thread("thread-root", null, { type: "notLoaded" })),
+    );
+    const provider = new CodexProvider(
+      () => failingShared.shift()!,
+      () => now,
+      "/synthetic/workspace",
+      false,
+      true,
+      () => fallbacks.shift()!,
+    );
+
+    await provider.connect();
+    now = new Date(NOW.getTime() + 10_001);
+    const snapshot = await provider.refresh();
+
+    expect(snapshot).toMatchObject({
+      statusSource: "persisted-inventory",
+      agents: [{ id: "thread-root", status: "unknown" }],
+      connection: "connected",
+    });
+  });
+
   it("fails closed to persisted unreported status when shared metadata is malformed", async () => {
     const transport = configuredTransport(
       thread("thread-root", null, { type: "notLoaded" }),

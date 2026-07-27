@@ -41,6 +41,9 @@ default production dependency.
   metadata poll, retry through the existing private stdio snapshot provider.
   Fallback inventory remains `Unreported`; it is never presented as live
   shared status.
+- While the experiment remains enabled, retry recovery from a connected
+  fallback with a ten-second minimum cooldown. Preserve the last safe snapshot
+  during the transition and reconnect private inventory after a failed retry.
 - Project a bounded source enum so the UI distinguishes a connected shared
   observer from persisted inventory. Do not expose socket or executable
   details.
