@@ -125,6 +125,25 @@ button {
   margin: 2px 0 0;
   line-height: 1.45;
 }
+
+.office-filter-empty {
+  border: 1px dashed var(--vscode-widget-border);
+  border-radius: 10px;
+  margin-top: 10px;
+  padding: 18px 12px;
+  text-align: center;
+}
+
+.office-filter-empty h2 {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+
+.office-filter-empty p {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  margin: 0;
+}
 .office-wall {
   display: flex;
   min-height: 38px;
