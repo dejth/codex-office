@@ -106,6 +106,10 @@ Failure to initialize the opt-in shared transport or complete its first
 bounded metadata poll retries through the existing private stdio provider.
 This preserves workspace inventory and reported account capacity while keeping
 all fallback agent states `Unreported`; fallback data is never labeled live.
+While the experiment remains enabled, a connected fallback retries the shared
+observer no more than once every ten seconds. A failed recovery reconnects the
+private provider and retains the last safe snapshot; a successful recovery
+switches subsequent snapshot provenance to shared observer.
 Every snapshot carries a bounded status-source enum so the UI can distinguish
 the shared observer from persisted inventory fallback without exposing socket,
 process, executable, or path details. A healthy shared observer with zero
