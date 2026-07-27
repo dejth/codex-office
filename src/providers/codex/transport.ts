@@ -1,7 +1,10 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { accessSync, constants } from "node:fs";
+import { accessSync, constants, lstatSync } from "node:fs";
+import { createConnection } from "node:net";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
+
+import WebSocket, { type ClientOptions, type RawData } from "ws";
 
 const MAX_LINE_BYTES = 1_048_576;
 
@@ -11,6 +14,8 @@ export class CodexTransportError extends Error {
       | "executable-not-found"
       | "spawn-failed"
       | "invalid-stdio"
+      | "socket-unavailable"
+      | "socket-permissions"
       | "protocol-failed"
       | "timeout" = "protocol-failed",
   ) {
@@ -55,6 +60,230 @@ export interface CodexStdioTransportOptions {
   command?: string;
   requestTimeoutMs?: number;
   spawnProcess?: SpawnAppServer;
+}
+
+interface UnixWebSocket {
+  readyState: number;
+  on(event: "open", listener: () => void): this;
+  on(event: "message", listener: (data: RawData) => void): this;
+  on(event: "error" | "close", listener: () => void): this;
+  send(data: string): void;
+  close(): void;
+  terminate(): void;
+}
+
+export interface CodexUnixSocketTransportOptions {
+  socketPath?: string;
+  requestTimeoutMs?: number;
+  createSocket?: (address: string, options: ClientOptions) => UnixWebSocket;
+  inspectSocket?: (path: string) => {
+    mode: number;
+    uid: number;
+    isSocket(): boolean;
+  };
+  currentUid?: () => number | undefined;
+}
+
+export function defaultCodexSharedSocketPath(
+  userHome: string = homedir(),
+): string {
+  return join(
+    userHome,
+    ".codex",
+    "app-server-control",
+    "app-server-control.sock",
+  );
+}
+
+export function isSecureCodexSharedSocket(
+  socketPath: string = defaultCodexSharedSocketPath(),
+): boolean {
+  try {
+    const metadata = lstatSync(socketPath);
+    const currentUid = process.getuid?.();
+    return (
+      metadata.isSocket() &&
+      (currentUid === undefined || metadata.uid === currentUid) &&
+      (metadata.mode & 0o077) === 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Minimal JSON-RPC client for an explicitly shared, owner-only local App
+ * Server Unix socket. Notifications are discarded at the transport boundary.
+ */
+export class CodexUnixSocketTransport implements CodexRpcTransport {
+  private readonly socketPath: string;
+  private readonly requestTimeoutMs: number;
+  private readonly createSocket: NonNullable<
+    CodexUnixSocketTransportOptions["createSocket"]
+  >;
+  private readonly inspectSocket: NonNullable<
+    CodexUnixSocketTransportOptions["inspectSocket"]
+  >;
+  private readonly currentUid: NonNullable<
+    CodexUnixSocketTransportOptions["currentUid"]
+  >;
+  private socket: UnixWebSocket | undefined;
+  private ready: Promise<void> | undefined;
+  private rejectReady: ((error: CodexTransportError) => void) | undefined;
+  private pending = new Map<number, PendingRequest>();
+  private nextId = 1;
+
+  constructor(options: CodexUnixSocketTransportOptions = {}) {
+    this.socketPath = options.socketPath ?? defaultCodexSharedSocketPath();
+    this.requestTimeoutMs = options.requestTimeoutMs ?? 10_000;
+    this.createSocket =
+      options.createSocket ??
+      ((address, socketOptions) =>
+        new WebSocket(address, socketOptions) as UnixWebSocket);
+    this.inspectSocket = options.inspectSocket ?? lstatSync;
+    this.currentUid = options.currentUid ?? (() => process.getuid?.());
+  }
+
+  start(): void {
+    if (this.socket !== undefined) return;
+    let metadata: ReturnType<typeof this.inspectSocket>;
+    try {
+      metadata = this.inspectSocket(this.socketPath);
+    } catch {
+      throw new CodexTransportError("socket-unavailable");
+    }
+    const currentUid = this.currentUid();
+    if (
+      !metadata.isSocket() ||
+      (currentUid !== undefined && metadata.uid !== currentUid) ||
+      (metadata.mode & 0o077) !== 0
+    ) {
+      throw new CodexTransportError("socket-permissions");
+    }
+
+    const socket = this.createSocket("ws://localhost/rpc", {
+      createConnection: () => createConnection({ path: this.socketPath }),
+      handshakeTimeout: this.requestTimeoutMs,
+      maxPayload: MAX_LINE_BYTES,
+      perMessageDeflate: false,
+    });
+    this.socket = socket;
+    this.ready = new Promise<void>((resolve, reject) => {
+      this.rejectReady = reject;
+      socket.on("open", () => {
+        this.rejectReady = undefined;
+        resolve();
+      });
+    });
+    socket.on("message", (data) => this.acceptMessage(data));
+    socket.on("error", () => this.fail());
+    socket.on("close", () => this.fail());
+  }
+
+  async request(method: string, params: unknown): Promise<unknown> {
+    const socket = this.socket;
+    const ready = this.ready;
+    if (socket === undefined || ready === undefined) {
+      throw new CodexTransportError();
+    }
+    await ready;
+    const id = this.nextId++;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new CodexTransportError("timeout"));
+      }, this.requestTimeoutMs);
+      this.pending.set(id, { resolve, reject, timer });
+      try {
+        socket.send(JSON.stringify({ method, id, params }));
+      } catch {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(new CodexTransportError());
+      }
+    });
+  }
+
+  notify(method: string): void {
+    const socket = this.socket;
+    if (socket === undefined || socket.readyState !== WebSocket.OPEN) {
+      throw new CodexTransportError();
+    }
+    try {
+      socket.send(JSON.stringify({ method }));
+    } catch {
+      throw new CodexTransportError();
+    }
+  }
+
+  stop(): void {
+    const socket = this.socket;
+    this.socket = undefined;
+    this.ready = undefined;
+    this.rejectReady?.(new CodexTransportError());
+    this.rejectReady = undefined;
+    this.rejectPending();
+    if (socket === undefined) return;
+    if (socket.readyState === WebSocket.OPEN) socket.close();
+    else socket.terminate();
+  }
+
+  private acceptMessage(data: RawData): void {
+    const bytes = rawDataToBuffer(data);
+    if (bytes === null || bytes.byteLength > MAX_LINE_BYTES) {
+      this.fail();
+      return;
+    }
+    let message: unknown;
+    try {
+      message = JSON.parse(bytes.toString("utf8"));
+    } catch {
+      this.fail();
+      return;
+    }
+    if (
+      typeof message !== "object" ||
+      message === null ||
+      !("id" in message) ||
+      typeof message.id !== "number" ||
+      !Number.isSafeInteger(message.id)
+    ) {
+      return;
+    }
+    const pending = this.pending.get(message.id);
+    if (pending === undefined) return;
+    clearTimeout(pending.timer);
+    this.pending.delete(message.id);
+    if ("result" in message) pending.resolve(message.result);
+    else pending.reject(new CodexTransportError());
+  }
+
+  private fail(): void {
+    const socket = this.socket;
+    this.socket = undefined;
+    this.ready = undefined;
+    this.rejectReady?.(new CodexTransportError());
+    this.rejectReady = undefined;
+    this.rejectPending();
+    if (socket !== undefined && socket.readyState !== WebSocket.CLOSED) {
+      socket.terminate();
+    }
+  }
+
+  private rejectPending(): void {
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new CodexTransportError());
+    }
+    this.pending.clear();
+  }
+}
+
+function rawDataToBuffer(data: RawData): Buffer | null {
+  if (Buffer.isBuffer(data)) return data;
+  if (data instanceof ArrayBuffer) return Buffer.from(data);
+  if (Array.isArray(data)) return Buffer.concat(data);
+  return null;
 }
 
 /** Minimal content-blind JSONL client for a locally owned App Server process. */

@@ -6,7 +6,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
 export const budgets = Object.freeze({
-  extensionBytes: 100 * 1024,
+  extensionBytes: 140 * 1024,
   webviewBytes: 350 * 1024,
   stylesheetBytes: 20 * 1024,
   imageBytes: 600_000,
