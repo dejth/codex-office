@@ -34,6 +34,18 @@ export interface AgentProvider {
   subscribe(listener: (snapshot: OfficeSnapshot) => void): () => void;
 }
 
+export type ProviderLifecycleEvent =
+  | {
+      stage: "connect-started" | "connect-succeeded";
+      source: "shared-observer" | "persisted-inventory";
+    }
+  | {
+      stage: "connect-failed";
+      source: "shared-observer" | "persisted-inventory";
+      diagnostic: Exclude<ProviderDiagnostic, "none">;
+      transportCode?: CodexTransportError["code"];
+    };
+
 const CONTENT_NOTIFICATION_OPT_OUTS = [
   "turn/started",
   "turn/completed",
@@ -85,6 +97,7 @@ export class CodexProvider implements AgentProvider {
     private readonly requireWorkspace = false,
     private readonly sharedAppServer: boolean | (() => boolean) = false,
     private readonly createFallbackTransport?: () => CodexRpcTransport,
+    private readonly reportLifecycle?: (event: ProviderLifecycleEvent) => void,
   ) {}
 
   async connect(): Promise<void> {
@@ -125,6 +138,8 @@ export class CodexProvider implements AgentProvider {
     sharedAppServer: boolean,
     publishFailure = true,
   ): Promise<boolean> {
+    const source = sharedAppServer ? "shared-observer" : "persisted-inventory";
+    this.reportLifecycle?.({ stage: "connect-started", source });
     this.activeSharedAppServer = sharedAppServer;
     const generation = ++this.generation;
     this.transport = transport;
@@ -157,20 +172,36 @@ export class CodexProvider implements AgentProvider {
         transport.stop();
         this.transport = undefined;
         this.connected = false;
+        this.reportLifecycle?.({
+          stage: "connect-failed",
+          source,
+          diagnostic: this.currentDiagnostic,
+        });
         return false;
       }
       transport.notify("initialized");
       this.connected = true;
       this.currentDiagnostic = "none";
       await this.poll(generation);
-      return this.connected && this.transport === transport;
+      const succeeded = this.connected && this.transport === transport;
+      if (succeeded)
+        this.reportLifecycle?.({ stage: "connect-succeeded", source });
+      return succeeded;
     } catch (error) {
       transport.stop();
       if (generation === this.generation && transport === this.transport) {
         this.transport = undefined;
         this.connected = false;
-        this.currentDiagnostic = diagnosticFromError(error);
+        const diagnostic = diagnosticFromError(error);
+        this.currentDiagnostic = diagnostic;
         if (publishFailure) this.setDegraded();
+        this.reportLifecycle?.({
+          stage: "connect-failed",
+          source,
+          diagnostic,
+          transportCode:
+            error instanceof CodexTransportError ? error.code : undefined,
+        });
       }
       return false;
     }
@@ -709,7 +740,9 @@ function cloneSnapshot(snapshot: OfficeSnapshot): OfficeSnapshot {
   return structuredClone(snapshot);
 }
 
-function diagnosticFromError(error: unknown): ProviderDiagnostic {
+function diagnosticFromError(
+  error: unknown,
+): Exclude<ProviderDiagnostic, "none" | "workspace-required"> {
   if (error instanceof CodexTransportError) {
     return error.code === "executable-not-found"
       ? "executable-unavailable"

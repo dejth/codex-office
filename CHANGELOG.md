@@ -64,6 +64,11 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Connect the opt-in shared observer through `ws`'s native Unix-socket URL in
+  the VS Code Extension Host, preventing client-option normalization from
+  redirecting the handshake to `localhost`. Add bounded local lifecycle logs
+  that contain no paths, identifiers, payloads, or session content.
+
 - Honor the enabled Shared App Server experiment inside VS Code by letting the
   secure Unix transport perform the authoritative socket check, avoiding a
   duplicate activation preflight that could select persisted inventory.
