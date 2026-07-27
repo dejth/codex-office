@@ -64,6 +64,10 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Honor the enabled Shared App Server experiment inside VS Code by letting the
+  secure Unix transport perform the authoritative socket check, avoiding a
+  duplicate activation preflight that could select persisted inventory.
+
 - Keep the last safe connected Office visible during experimental Shared App
   Server recovery, preventing ten-second warning flashes while still
   publishing recovered loaded-thread status and real dual-source failures.
