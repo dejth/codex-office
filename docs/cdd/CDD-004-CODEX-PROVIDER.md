@@ -106,6 +106,11 @@ Failure to initialize the opt-in shared transport or complete its first
 bounded metadata poll retries through the existing private stdio provider.
 This preserves workspace inventory and reported account capacity while keeping
 all fallback agent states `Unreported`; fallback data is never labeled live.
+Every snapshot carries a bounded status-source enum so the UI can distinguish
+the shared observer from persisted inventory fallback without exposing socket,
+process, executable, or path details. A healthy shared observer with zero
+loaded threads remains connected; its persisted sessions correctly stay
+`Unreported`.
 
 Root classification also remains evidence-based. A sanitized 0.145.0 probe
 found 21 workspace-scoped `vscode` sessions with no canonical or spawn-source

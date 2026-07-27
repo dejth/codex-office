@@ -6,6 +6,8 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Show whether Agent status comes from the shared observer or persisted
+  inventory without exposing transport details.
 - Sort intact Office agent groups by reported activity: active work first,
   newest updates first within each class, and Unreported sessions last.
 - Add a disabled-by-default Shared App Server experiment that can overlay
