@@ -6,6 +6,8 @@ import {
   codexExecutableCandidates,
   CodexStdioTransport,
   CodexTransportError,
+  CodexUnixSocketTransport,
+  defaultCodexSharedSocketPath,
   type AppServerProcess,
 } from "../../src/providers/codex/transport";
 
@@ -193,5 +195,151 @@ describe("CodexStdioTransport", () => {
     await expect(first).rejects.toBeInstanceOf(CodexTransportError);
     await expect(second).rejects.toBeInstanceOf(CodexTransportError);
     expect(child.wasKilled()).toBe(true);
+  });
+});
+
+class FakeSocket extends EventEmitter {
+  readyState = 0;
+  readonly writes: string[] = [];
+
+  send(value: string): void {
+    this.writes.push(value);
+  }
+
+  open(): void {
+    this.readyState = 1;
+    this.emit("open");
+  }
+
+  push(value: string): void {
+    this.emit("message", Buffer.from(value));
+  }
+
+  close(): void {
+    this.readyState = 3;
+    this.emit("close");
+  }
+
+  terminate(): void {
+    this.readyState = 3;
+  }
+}
+
+describe("CodexUnixSocketTransport", () => {
+  it("uses the owner-only default Codex control socket path", () => {
+    expect(defaultCodexSharedSocketPath("/synthetic/home")).toBe(
+      "/synthetic/home/.codex/app-server-control/app-server-control.sock",
+    );
+  });
+
+  it("correlates responses while discarding notification payloads", async () => {
+    const socket = new FakeSocket();
+    let socketAddress: string | undefined;
+    let socketOptions: unknown;
+    const transport = new CodexUnixSocketTransport({
+      socketPath: "/synthetic/control.sock",
+      inspectSocket: () => ({
+        mode: 0o140600,
+        uid: 501,
+        isSocket: () => true,
+      }),
+      currentUid: () => 501,
+      createSocket: (address, options) => {
+        socketAddress = address;
+        socketOptions = options;
+        return socket;
+      },
+    });
+    transport.start();
+    expect(socketAddress).toBe("ws://localhost/rpc");
+    expect(socketOptions).toMatchObject({
+      handshakeTimeout: 10_000,
+      maxPayload: 1_048_576,
+      perMessageDeflate: false,
+      createConnection: expect.any(Function),
+    });
+    const response = transport.request("thread/loaded/list", {});
+    socket.open();
+    await vi.waitFor(() => expect(socket.writes).toHaveLength(1));
+
+    socket.push(
+      JSON.stringify({
+        method: "item/started",
+        params: { prompt: "must be discarded" },
+      }),
+    );
+    socket.push(JSON.stringify({ id: 1, result: { data: [] } }));
+
+    await expect(response).resolves.toEqual({ data: [] });
+    transport.notify("initialized");
+    expect(JSON.parse(socket.writes[1]!)).toEqual({ method: "initialized" });
+    transport.stop();
+  });
+
+  it("rejects missing, non-socket, shared, and foreign-owner endpoints", () => {
+    const cases = [
+      {
+        inspectSocket: () => {
+          throw new Error("missing");
+        },
+        code: "socket-unavailable",
+      },
+      {
+        inspectSocket: () => ({
+          mode: 0o100600,
+          uid: 501,
+          isSocket: () => false,
+        }),
+        code: "socket-permissions",
+      },
+      {
+        inspectSocket: () => ({
+          mode: 0o140660,
+          uid: 501,
+          isSocket: () => true,
+        }),
+        code: "socket-permissions",
+      },
+      {
+        inspectSocket: () => ({
+          mode: 0o140600,
+          uid: 777,
+          isSocket: () => true,
+        }),
+        code: "socket-permissions",
+      },
+    ];
+
+    for (const testCase of cases) {
+      const transport = new CodexUnixSocketTransport({
+        socketPath: "/synthetic/control.sock",
+        inspectSocket: testCase.inspectSocket,
+        currentUid: () => 501,
+        createSocket: () => new FakeSocket(),
+      });
+      expect(() => transport.start()).toThrowError(
+        expect.objectContaining({ code: testCase.code }),
+      );
+    }
+  });
+
+  it("rejects pending work when the socket closes", async () => {
+    const socket = new FakeSocket();
+    const transport = new CodexUnixSocketTransport({
+      socketPath: "/synthetic/control.sock",
+      inspectSocket: () => ({
+        mode: 0o140600,
+        uid: 501,
+        isSocket: () => true,
+      }),
+      currentUid: () => 501,
+      createSocket: () => socket,
+    });
+    transport.start();
+    const response = transport.request("thread/loaded/list", {});
+    socket.open();
+    await vi.waitFor(() => expect(socket.writes).toHaveLength(1));
+    socket.close();
+    await expect(response).rejects.toBeInstanceOf(CodexTransportError);
   });
 });

@@ -6,6 +6,12 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Added
 
+- Add a disabled-by-default Shared App Server experiment that can overlay
+  owner-only local thread status without resuming agents or reading turns. Its
+  WebSocket client is bundled into the extension while the existing total VSIX
+  size gate remains unchanged.
+- Verify the shared metadata contract against Codex CLI 0.145.0 and use an
+  explicit Unix-domain connection for its current WebSocket handshake.
 - Combine reported account capacity, root/subagent/thread counts, filters, and
   animated agents into one compact sidebar. Agent cards now share one footprint
   and root sessions use a subtle blue background plus a readable `Main` label.
@@ -47,6 +53,11 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ### Fixed
 
+- Keep the experimental shared observer connected while another Codex client
+  is active by opting out of content-bearing notification bursts that the
+  metadata-only sidebar neither reads nor displays.
+- Label top-level cards as `Root` instead of implying every independent VS Code
+  session is one main agent.
 - Label provider-missing agent status as `Unreported` instead of the ambiguous
   `Unknown`.
 - Keep compact Office agent names and statuses readable at narrow sidebar

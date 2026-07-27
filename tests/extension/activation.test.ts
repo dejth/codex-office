@@ -7,6 +7,9 @@ const vscodeMock = vi.hoisted(() => ({
   }),
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
   executeCommand: vi.fn(),
+  getConfiguration: vi.fn(() => ({
+    get: vi.fn((_key: string, fallback: unknown) => fallback),
+  })),
 }));
 
 vi.mock("vscode", () => ({
@@ -20,7 +23,7 @@ vi.mock("vscode", () => ({
   workspace: {
     workspaceFolders: [{ uri: { fsPath: "/synthetic/workspace" } }],
     onDidChangeConfiguration: vi.fn(),
-    getConfiguration: vi.fn(),
+    getConfiguration: vscodeMock.getConfiguration,
   },
   Uri: { joinPath: vi.fn() },
 }));

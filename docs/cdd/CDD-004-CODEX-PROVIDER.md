@@ -1,9 +1,12 @@
 # CDD-004 — Codex Provider Contract
 
-Status: Verified metadata and account-capacity polling for Codex CLI 0.138.0
+Status: Verified metadata, account-capacity polling, and opt-in shared status
+for Codex CLI 0.145.0
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 and [ADR-0004](../decisions/ADR-0004-STATE-DB-SPAWN-AND-ACCOUNT-CAPACITY.md).
+The opt-in shared status overlay is governed by
+[ADR-0005](../decisions/ADR-0005-OPT-IN-SHARED-APP-SERVER-STATUS.md).
 
 ## Strategy
 
@@ -27,7 +30,8 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 
 ## Capability gate
 
-- Support is an exact allowlist for `0.138.0`; every other version degrades until its generated schema and contract suite pass.
+- Support is an exact allowlist for `0.145.0`; every other version degrades
+  until its generated schema and contract suite pass.
 - Runtime fingerprints are accepted only with the verified `Codex Desktop/`
   or Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
   other prefixes degrade without exposing the raw fingerprint.
@@ -77,6 +81,25 @@ private-stdio App Server processes, and the official extension exposes no
 documented shared endpoint configuration. Until an official read-only
 cross-client subscription exists, provider-backed Office status remains
 inventory provenance rather than live lifecycle state.
+
+An explicitly enabled experimental mode may instead connect to the default
+owner-only managed App Server Unix socket on Codex CLI 0.145.0. It preserves
+the state-database hierarchy, intersects `thread/loaded/list` identifiers with
+the already workspace-bounded inventory, and reads only strict identifier and
+status metadata through `thread/read` with `includeTurns: false`. It never
+starts, resumes, forks, prompts, or controls a thread; it discards
+notifications and unknown fields. Initialization explicitly opts out of
+content-bearing turn, item, command-output, file-change, reasoning, and
+realtime notifications; live state continues to come from bounded metadata
+polling. Missing, malformed, incompatible, or unloaded states remain
+`Unreported`. The mode is disabled by default and cannot be configured with a
+remote endpoint or arbitrary socket path.
+
+Root classification also remains evidence-based. A sanitized 0.145.0 probe
+found 21 workspace-scoped `vscode` sessions with no canonical or spawn-source
+parent field. They are separate root sessions, not nineteen or twenty inferred
+subagents. The UI labels these cards `Root`; only verified parent edges receive
+the `Sub` label.
 
 The production extension requires an open workspace before connecting. With no
 workspace it does not start App Server or request global persisted sessions;
