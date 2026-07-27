@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const configuration = vi.hoisted(() => ({ sharedAppServer: false }));
 
 const vscodeMock = vi.hoisted(() => ({
+  createOutputChannel: vi.fn(() => ({
+    info: vi.fn(),
+    dispose: vi.fn(),
+  })),
   registerWebviewViewProvider: vi.fn((...args: [string, unknown]) => {
     void args;
     return { dispose: vi.fn() };
@@ -20,6 +24,7 @@ const vscodeMock = vi.hoisted(() => ({
 
 vi.mock("vscode", () => ({
   window: {
+    createOutputChannel: vscodeMock.createOutputChannel,
     registerWebviewViewProvider: vscodeMock.registerWebviewViewProvider,
   },
   commands: {
@@ -74,7 +79,11 @@ describe("extension activation", () => {
       expect.any(Function),
     );
     expect(vscodeMock.registerCommand).toHaveBeenCalledTimes(2);
-    expect(context.subscriptions).toHaveLength(4);
+    expect(vscodeMock.createOutputChannel).toHaveBeenCalledWith(
+      "Codex Office",
+      { log: true },
+    );
+    expect(context.subscriptions).toHaveLength(5);
   });
 
   it("honors shared observer intent and leaves socket validation to the transport", () => {

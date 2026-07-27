@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
-import { CodexProvider } from "../providers/codex/provider";
+import {
+  CodexProvider,
+  type ProviderLifecycleEvent,
+} from "../providers/codex/provider";
 import {
   CodexStdioTransport,
   CodexUnixSocketTransport,
@@ -7,10 +10,23 @@ import {
 import { CodexOfficeViewProvider } from "./view-provider";
 
 export function activate(context: vscode.ExtensionContext): void {
+  const diagnostics = vscode.window.createOutputChannel("Codex Office", {
+    log: true,
+  });
   const useSharedAppServer = (): boolean =>
     vscode.workspace
       .getConfiguration("codexOffice")
       .get<boolean>("experimentalSharedAppServer", false);
+  const reportLifecycle = (event: ProviderLifecycleEvent): void => {
+    const suffix =
+      event.stage === "connect-failed"
+        ? `:${event.diagnostic}${event.transportCode === undefined ? "" : `:${event.transportCode}`}`
+        : "";
+    diagnostics.info(`${event.source}:${event.stage}${suffix}`);
+  };
+  diagnostics.info(
+    `shared-setting:${useSharedAppServer() ? "enabled" : "disabled"}`,
+  );
   const provider = new CodexOfficeViewProvider(
     context.extensionUri,
     new CodexProvider(
@@ -23,9 +39,11 @@ export function activate(context: vscode.ExtensionContext): void {
       true,
       useSharedAppServer,
       () => new CodexStdioTransport(),
+      reportLifecycle,
     ),
   );
   context.subscriptions.push(
+    diagnostics,
     provider,
     vscode.window.registerWebviewViewProvider("codexOffice.sidebar", provider),
     vscode.commands.registerCommand("codexOffice.refresh", () =>
