@@ -1,8 +1,8 @@
 # Agent Handoff
 
 - Task / owner: Tasks 049 and 050 / Dex
-- Outcome: README badges added and Codex Office 0.1.1 candidate verified for
-  exact Codex CLI 0.146.0; external GitHub and Marketplace actions remain gated.
+- Outcome: README badges added, Codex Office 0.1.1 verified for exact Codex CLI
+  0.146.0, promoted through reviewed PRs, and published to the Marketplace.
 - Files changed: README and changelog; provider capability gate and tests;
   unsupported-version copy and test; CDD-004, ADR-0005 follow-up, ADR-0007;
   Marketplace/release validation; package version; task records.
@@ -19,10 +19,10 @@
 - Privacy/security impact: No telemetry, remote persistence, content
   ingestion, new permission, steering, or per-agent token claim. Schema and
   runtime checks retained only bounded version/method evidence.
-- Known limitations: Other Codex versions remain unsupported. Marketplace
-  publication, GitHub push, PR, merge, and tagging have not occurred.
-- Follow-ups / dependencies: Maintainer reviews this handoff and candidate,
-  then explicitly authorizes the external publication workflow.
+- Known limitations: Other Codex versions remain unsupported. No release tag
+  was requested or created.
+- Follow-ups / dependencies: Monitor Marketplace verification and user reports;
+  prepare another reviewed patch if compatibility or activation regresses.
 - Exact reviewer reproduction steps: Run `pnpm check`, `pnpm audit --prod`,
   `pnpm exec vsce ls`, package `artifacts/codex-office-0.1.1.vsix`, run the
   budget and clean-profile commands in `docs/release/V0.1.1_VALIDATION.md`,
