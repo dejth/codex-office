@@ -4,10 +4,23 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-30
+
+### Added
+
+- Add CI, Marketplace version, and MIT license badges to the repository README.
+
 ### Changed
 
+- Move the exact Codex compatibility gate to schema-verified CLI `0.146.0`
+  while preserving the existing privacy-minimized provider boundary.
 - Record the maintainer-approved Marketplace publication of `dejth.codex-office`
   0.1.0 and promotion of the reviewed release source to `main`.
+
+### Fixed
+
+- Correct the unsupported-version notice so it reports the actual supported
+  Codex CLI version.
 
 ## [0.1.0] - 2026-07-27
 

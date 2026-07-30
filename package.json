@@ -2,7 +2,7 @@
   "name": "codex-office",
   "displayName": "Codex Office",
   "description": "Watch local Codex sessions and basic live agent status in an animated, privacy-first VS Code sidebar.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packageManager": "pnpm@10.15.0",
   "publisher": "dejth",
   "icon": "assets/marketplace/icon.png",
