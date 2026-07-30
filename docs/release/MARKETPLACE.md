@@ -22,6 +22,11 @@ Version 0.1.0 was published manually on 2026-07-27 as
 [`dejth.codex-office`](https://marketplace.visualstudio.com/items?itemName=dejth.codex-office).
 That approval applies only to this version.
 
+Version 0.1.1 is a patch candidate for exact Codex CLI 0.146.0 compatibility.
+Its engineering evidence is tracked in
+[`V0.1.1_VALIDATION.md`](V0.1.1_VALIDATION.md); publication still requires a
+fresh explicit maintainer approval.
+
 ## Listing checklist
 
 Clear value proposition; sanitized production-UI screenshot; privacy

@@ -2,6 +2,10 @@
 
 > Watch local Codex agents work — privately, inside VS Code.
 
+[![CI](https://github.com/dejth/codex-office/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/dejth/codex-office/actions/workflows/ci.yml)
+[![Visual Studio Marketplace](https://vsmarketplacebadges.dev/version/dejth.codex-office.svg)](https://marketplace.visualstudio.com/items?itemName=dejth.codex-office)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Codex Office is a local-first, read-only VS Code sidebar for visualizing Codex
 sessions, nested subagents, and basic live status with animated pixel-art
 characters.
@@ -37,7 +41,7 @@ See [SECURITY.md](SECURITY.md) and the
 - VS Code `^1.96.0` is declared. The Marketplace beta release record states
   which versions have actually been tested.
 - Persisted workspace inventory works without experimental configuration.
-- Basic live status is currently pinned to Codex CLI `0.145.0` and requires
+- Basic live status is currently pinned to Codex CLI `0.146.0` and requires
   its owner-only managed App Server daemon.
 
 To opt in, enable **Codex Office › Experimental Shared App Server** in VS Code

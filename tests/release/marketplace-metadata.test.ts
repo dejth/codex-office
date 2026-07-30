@@ -20,7 +20,7 @@ describe("Marketplace metadata", () => {
   it("identifies the reviewed beta candidate and PNG listing icon", () => {
     expect(manifest.name).toBe("codex-office");
     expect(manifest.publisher).toBe("dejth");
-    expect(manifest.version).toBe("0.1.0");
+    expect(manifest.version).toBe("0.1.1");
     expect(manifest.icon).toMatch(/\.png$/u);
     expect(readFileSync(manifest.icon!).subarray(0, 8)).toEqual(pngSignature);
     expect(

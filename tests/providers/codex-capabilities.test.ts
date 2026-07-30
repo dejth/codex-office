@@ -9,7 +9,7 @@ import {
 } from "../../src/providers/codex/capabilities";
 
 const VALID_INITIALIZE = {
-  userAgent: "Codex Desktop/0.145.0 (Mac OS 26.5.2; arm64) synthetic-client",
+  userAgent: "Codex Desktop/0.146.0 (Mac OS 26.5.2; arm64) synthetic-client",
 };
 
 function schema(
@@ -29,7 +29,7 @@ describe("negotiateCodexCapabilities", () => {
     ).toBe(true);
   });
 
-  it("reports exact 0.145.0 as partial metadata and account-capacity polling", () => {
+  it("reports exact 0.146.0 as partial metadata and account-capacity polling", () => {
     const result = negotiateCodexCapabilities(VALID_INITIALIZE);
 
     expect(REQUIRED_REQUEST_METHODS).toEqual([
@@ -39,7 +39,7 @@ describe("negotiateCodexCapabilities", () => {
     ]);
     expect(result).toEqual({
       status: "partial",
-      version: "0.145.0",
+      version: "0.146.0",
       mode: "snapshot-polling",
       experimentalApi: false,
       capabilities: {
@@ -54,27 +54,28 @@ describe("negotiateCodexCapabilities", () => {
 
   it("accepts the verified Extension Host fingerprint", () => {
     const result = negotiateCodexCapabilities({
-      userAgent: "codex-office/0.145.0",
+      userAgent: "codex-office/0.146.0",
     });
 
     expect(result.status).toBe("partial");
-    expect(result.version).toBe("0.145.0");
+    expect(result.version).toBe("0.146.0");
     expect(result.capabilities.hierarchyPolling).toBe(true);
   });
 
   it.each([
     "Codex Desktop/0.138.0 (previously supported)",
-    "Codex Desktop/0.145.1 (test)",
-    "codex-cli/0.145.0",
-    "Spoof Codex Desktop/0.145.0",
-    "Codex Desktop/0.145.0 Codex Desktop/0.145.0",
-    "codex-office/0.145.0 codex-office/0.145.0",
-    "codex-office/0.145.0 Codex Desktop/0.145.0",
-    "codex-office/0.145.1",
-    "codex-office/0.145.0\nmalformed",
-    "codex-office/0.145.0\rmalformed",
-    "codex-office/0.145.0\0malformed",
-    "Codex Desktop/00.145.0",
+    "Codex Desktop/0.145.0 (previously supported)",
+    "Codex Desktop/0.146.1 (test)",
+    "codex-cli/0.146.0",
+    "Spoof Codex Desktop/0.146.0",
+    "Codex Desktop/0.146.0 Codex Desktop/0.146.0",
+    "codex-office/0.146.0 codex-office/0.146.0",
+    "codex-office/0.146.0 Codex Desktop/0.146.0",
+    "codex-office/0.146.1",
+    "codex-office/0.146.0\nmalformed",
+    "codex-office/0.146.0\rmalformed",
+    "codex-office/0.146.0\0malformed",
+    "Codex Desktop/00.146.0",
     "not-a-fingerprint",
   ])(
     "degrades unsupported, malformed, or ambiguous fingerprint",
@@ -137,14 +138,14 @@ describe("negotiateCodexCapabilities", () => {
   it("strips and never returns raw fingerprint or sensitive extras", () => {
     const secret = "/Users/private/secret-workspace";
     const result = negotiateCodexCapabilities({
-      userAgent: `Codex Desktop/0.145.0 (${secret})`,
+      userAgent: `Codex Desktop/0.146.0 (${secret})`,
       codexHome: secret,
       preview: "secret prompt",
     });
     const serialized = JSON.stringify(result);
 
     expect(result.status).toBe("partial");
-    expect(serialized).not.toContain("Codex Desktop/0.145.0");
+    expect(serialized).not.toContain("Codex Desktop/0.146.0");
     expect(serialized).not.toContain(secret);
     expect(serialized).not.toContain("secret prompt");
   });
