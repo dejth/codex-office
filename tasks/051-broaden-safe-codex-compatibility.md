@@ -1,6 +1,6 @@
 # Task: Broaden safe Codex compatibility and clarify Marketplace details
 
-Status: Ready for maintainer review
+Status: Complete
 Owner: Dex
 Governing contract: CDD-004, CDD-006, CDD-007
 Depends on: Task 050
@@ -52,3 +52,5 @@ status provenance, compatibility, troubleshooting, and privacy.
 - [x] VSIX package and clean-profile lifecycle
 - [x] Privacy/security impact recorded
 - [x] Handoff complete
+- [x] Maintainer publication independently verified through the public Gallery
+      API
