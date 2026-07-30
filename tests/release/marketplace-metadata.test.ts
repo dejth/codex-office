@@ -20,7 +20,7 @@ describe("Marketplace metadata", () => {
   it("identifies the reviewed beta candidate and PNG listing icon", () => {
     expect(manifest.name).toBe("codex-office");
     expect(manifest.publisher).toBe("dejth");
-    expect(manifest.version).toBe("0.1.1");
+    expect(manifest.version).toBe("0.1.2");
     expect(manifest.icon).toMatch(/\.png$/u);
     expect(readFileSync(manifest.icon!).subarray(0, 8)).toEqual(pngSignature);
     expect(
@@ -29,12 +29,15 @@ describe("Marketplace metadata", () => {
   });
 
   it("describes supported status without claiming per-agent token usage", () => {
-    expect(manifest.description).toContain("basic live agent status");
+    expect(manifest.description).toContain("privacy-safe status");
     expect(manifest.description).not.toMatch(/token usage|billing/iu);
     expect(readme).toContain(
       "Per-agent token usage is intentionally unavailable",
     );
     expect(readme).not.toContain("Understand where the tokens go");
+    expect(readme).toContain("## Compatibility");
+    expect(readme).toContain("## Troubleshooting");
+    expect(readme).toContain("strict, bounded validation");
   });
 
   it("keeps the deterministic preview directly openable from its file path", () => {

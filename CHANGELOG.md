@@ -4,6 +4,24 @@ All notable changes follow Keep a Changelog and Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-30
+
+### Changed
+
+- Let well-formed but unverified Codex runtimes use persisted workspace
+  inventory only after every consumed response passes strict bounded schemas.
+- Keep experimental Shared observer status pinned to verified Codex 0.146.0
+  and fall back to persisted inventory when the shared runtime is incompatible.
+- Rewrite the Marketplace README around setup, compatibility, status meaning,
+  troubleshooting, privacy, and current limitations.
+
+### Fixed
+
+- Avoid blocking the entire extension only because Codex CLI and desktop
+  bundles report different otherwise compatible versions.
+- Replace the blanket unsupported-version notice with recovery-oriented copy
+  that distinguishes workspace inventory from verified live status.
+
 ## [0.1.1] - 2026-07-30
 
 ### Added
