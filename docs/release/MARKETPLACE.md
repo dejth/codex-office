@@ -26,6 +26,12 @@ Version 0.1.1 was published with explicit maintainer approval on 2026-07-30 for
 exact Codex CLI 0.146.0 compatibility. Its engineering and publication evidence
 is tracked in [`V0.1.1_VALIDATION.md`](V0.1.1_VALIDATION.md).
 
+Version 0.1.2 is a candidate for runtime-probed persisted inventory, verified
+Shared observer fallback, and clearer user-facing Marketplace details. Its
+engineering evidence is tracked in
+[`V0.1.2_VALIDATION.md`](V0.1.2_VALIDATION.md). The agent prepares the reviewed
+VSIX and checksum; the maintainer performs Upload/Publish manually.
+
 ## Listing checklist
 
 Clear value proposition; sanitized production-UI screenshot; privacy
