@@ -1,6 +1,6 @@
 # Task: Support Codex 0.146.0 and prepare patch release
 
-Status: Ready for maintainer review
+Status: Complete
 Owner: Dex
 Governing contract: CDD-004, CDD-007
 Depends on: Task 049
@@ -35,7 +35,7 @@ Marketplace publication.
 - [x] User-facing compatibility text consistently reports 0.146.0.
 - [x] Regenerated 0.146.0 schema evidence covers every consumed method and field.
 - [x] Version 0.1.1 candidate passes release gates and package audit.
-- [x] Marketplace publication remains explicitly human-approved.
+- [x] Marketplace publication completed after explicit maintainer approval.
 
 ## Verification
 
