@@ -21,8 +21,10 @@
   runtimes cannot publish inventory until strict schemas pass.
 - Known limitations: Runtime probing cannot promise compatibility with every
   future App Server. Shared live status remains version-pinned.
-- Follow-ups / dependencies: Maintainer reviews the final VSIX and performs the
-  Marketplace Upload/Publish action manually.
+- Follow-ups / dependencies: Complete. The maintainer published 0.1.2 manually
+  on 2026-07-30, and the public Gallery API subsequently reported version
+  0.1.2. Marketplace description caches may refresh separately from the public
+  version record.
 - Exact reviewer reproduction steps: Run the commands in
   `docs/release/V0.1.2_VALIDATION.md`, install the candidate VSIX, and verify
   both persisted fallback and verified Shared observer behavior.
