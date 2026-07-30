@@ -124,8 +124,7 @@ export class CodexProvider implements AgentProvider {
     if (
       connected ||
       !sharedAppServer ||
-      this.createFallbackTransport === undefined ||
-      this.currentDiagnostic !== "transport-unavailable"
+      this.createFallbackTransport === undefined
     ) {
       return;
     }
@@ -161,7 +160,9 @@ export class CodexProvider implements AgentProvider {
         transport.stop();
         return false;
       }
-      const capability = negotiateCodexCapabilities(initialize);
+      const capability = negotiateCodexCapabilities(initialize, undefined, {
+        allowUnverifiedRuntime: !sharedAppServer,
+      });
       if (!capability.capabilities.hierarchyPolling) {
         this.currentDiagnostic = capability.diagnostics.some(
           ({ code }) => code === "unsupported-runtime-version",

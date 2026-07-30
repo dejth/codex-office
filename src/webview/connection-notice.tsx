@@ -12,7 +12,7 @@ const REASON_MESSAGES: Partial<Record<NonNullable<ConnectionReason>, string>> =
     "provider-transport-unavailable":
       "The Codex provider stopped responding. Reconnecting…",
     "unsupported-version":
-      "This Codex version is not supported. Codex Office currently supports 0.146.0.",
+      "This Codex runtime could not be verified. Workspace inventory supports compatible runtimes; live status currently requires verified Codex 0.146.0.",
     "invalid-provider-data":
       "Codex returned invalid provider data. Showing the last safe snapshot.",
   };

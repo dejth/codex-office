@@ -1,14 +1,16 @@
 # CDD-004 — Codex Provider Contract
 
-Status: Verified metadata, account-capacity polling, and opt-in shared status
-for Codex CLI 0.146.0
+Status: Verified metadata, runtime-probed persisted inventory, account-capacity
+polling, and opt-in shared status for Codex CLI 0.146.0
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 and [ADR-0004](../decisions/ADR-0004-STATE-DB-SPAWN-AND-ACCOUNT-CAPACITY.md).
 The opt-in shared status overlay is governed by
 [ADR-0005](../decisions/ADR-0005-OPT-IN-SHARED-APP-SERVER-STATUS.md). The
 current exact compatibility evidence is recorded in
-[ADR-0007](../decisions/ADR-0007-CODEX-0.146.0-COMPATIBILITY.md).
+[ADR-0007](../decisions/ADR-0007-CODEX-0.146.0-COMPATIBILITY.md). The bounded
+runtime-probed inventory fallback is governed by
+[ADR-0008](../decisions/ADR-0008-RUNTIME-PROBED-INVENTORY-COMPATIBILITY.md).
 
 ## Strategy
 
@@ -32,10 +34,14 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 
 ## Capability gate
 
-- Support is an exact allowlist for `0.146.0`; every other version degrades
-  until its generated schema and contract suite pass.
-- Runtime fingerprints are accepted only with the verified `Codex Desktop/`
-  or Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
+- Experimental Shared observer support remains an exact allowlist for
+  `0.146.0`; every other version falls back to persisted inventory.
+- Persisted inventory may accept another syntactically valid runtime from a
+  trusted fingerprint prefix. Acceptance is provisional and content-free: the
+  first `thread/list` result and every later consumed result must pass the
+  existing bounded schemas before any snapshot is published.
+- Runtime fingerprints are accepted only with the trusted `Codex Desktop/` or
+  Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
   other prefixes degrade without exposing the raw fingerprint.
 - The implemented mode is partial `snapshot-polling` using `initialize`,
   `thread/list` with `useStateDbOnly: true`, and the bounded
@@ -46,6 +52,8 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
   describes the overall adapter as fully supported.
 - Experimental API remains disabled. A privacy-reviewed usage/live attachment contract is required before those capabilities can be enabled.
 - Capability diagnostics are bounded and content-free. Raw fingerprints, `codexHome`, paths, prompts, and server payloads are never retained.
+- Runtime-probed compatibility is never described as schema-verified support.
+  Malformed or ambiguous fingerprints still fail before thread reads.
 
 ## Failure behavior
 
@@ -104,6 +112,12 @@ the Unix transport itself validates that the default endpoint is a real socket,
 is owned by the current user, and has no group or other permissions before it
 opens a connection. Validation failure follows the same private-inventory
 fallback path.
+
+An incompatible shared runtime also follows that private-inventory fallback.
+The fallback process may runtime-probe persisted inventory, but it never calls
+`thread/loaded/list` or `thread/read` unless the runtime is exactly verified for
+Shared observer status. This keeps hierarchy available across rolling CLI and
+desktop bundle versions without treating unverified live semantics as safe.
 
 The WebSocket client addresses that verified endpoint with its native
 `ws+unix:` URL form. Passing a Unix connection callback through ordinary
