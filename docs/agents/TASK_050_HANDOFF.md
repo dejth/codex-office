@@ -7,9 +7,9 @@
   unsupported-version copy and test; CDD-004, ADR-0005 follow-up, ADR-0007;
   Marketplace/release validation; package version; task records.
 - Contract decisions: Exact 0.146.0 only. Older, newer, malformed, mixed, or
-  ambiguous fingerprints still fail closed. Privacy-minimized polling,
-  content-bearing notification opt-outs, `usage: false`, and `liveUpdates:
-false` are unchanged.
+  ambiguous fingerprints still fail closed. Privacy-minimized polling and
+  content-bearing notification opt-outs are unchanged. Usage and live updates
+  remain disabled.
 - Verification performed and result: 54 targeted tests pass; `pnpm check`
   passes 25 files / 224 tests; production audit reports no known
   vulnerabilities; all three badge URLs return HTTP 200; package audit passes
