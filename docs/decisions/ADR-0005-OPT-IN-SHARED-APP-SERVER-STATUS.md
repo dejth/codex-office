@@ -95,9 +95,12 @@ clients from delivering prompt, response, command-output, file-change, or
 reasoning payloads to the observer. The existing bounded transport limit is not
 increased.
 
-Because the WebSocket transport is experimental, exact Codex CLI 0.145.0
-remains the only accepted version. A version change requires regenerated schema
-evidence and regression verification before the capability can be widened.
+Because the WebSocket transport is experimental, this decision initially
+accepted only exact Codex CLI 0.145.0. A version change requires regenerated
+schema evidence and regression verification before the capability can move.
+[ADR-0007](ADR-0007-CODEX-0.146.0-COMPATIBILITY.md) satisfies that requirement
+for 0.146.0 and supersedes only the exact version allowlist; the privacy and
+transport decisions here remain unchanged.
 
 ## Verification evidence
 

@@ -1,12 +1,14 @@
 # CDD-004 — Codex Provider Contract
 
 Status: Verified metadata, account-capacity polling, and opt-in shared status
-for Codex CLI 0.145.0
+for Codex CLI 0.146.0
 
 Evidence baseline: [ADR-0003](../decisions/ADR-0003-CODEX-APP-SERVER-EVIDENCE.md)
 and [ADR-0004](../decisions/ADR-0004-STATE-DB-SPAWN-AND-ACCOUNT-CAPACITY.md).
 The opt-in shared status overlay is governed by
-[ADR-0005](../decisions/ADR-0005-OPT-IN-SHARED-APP-SERVER-STATUS.md).
+[ADR-0005](../decisions/ADR-0005-OPT-IN-SHARED-APP-SERVER-STATUS.md). The
+current exact compatibility evidence is recorded in
+[ADR-0007](../decisions/ADR-0007-CODEX-0.146.0-COMPATIBILITY.md).
 
 ## Strategy
 
@@ -30,7 +32,7 @@ The current evidence verifies `Thread.id`, `Thread.sessionId`, and `Thread.paren
 
 ## Capability gate
 
-- Support is an exact allowlist for `0.145.0`; every other version degrades
+- Support is an exact allowlist for `0.146.0`; every other version degrades
   until its generated schema and contract suite pass.
 - Runtime fingerprints are accepted only with the verified `Codex Desktop/`
   or Extension Host `codex-office/` prefix. Repeated, mixed, malformed, and
@@ -84,7 +86,7 @@ cross-client subscription exists, provider-backed Office status remains
 inventory provenance rather than live lifecycle state.
 
 An explicitly enabled experimental mode may instead connect to the default
-owner-only managed App Server Unix socket on Codex CLI 0.145.0. It preserves
+owner-only managed App Server Unix socket on Codex CLI 0.146.0. It preserves
 the state-database hierarchy, intersects `thread/loaded/list` identifiers with
 the already workspace-bounded inventory, and reads only strict identifier and
 status metadata through `thread/read` with `includeTurns: false`. It never
@@ -111,7 +113,7 @@ Extension Host. Host-local lifecycle logs may record only source, stage,
 bounded provider diagnostic, and bounded transport error code; they never
 record paths, identifiers, payloads, prompts, or session content.
 
-Codex CLI 0.145.0 reports `Thread.updatedAt` as Unix seconds for the last
+Codex CLI 0.146.0 reports `Thread.updatedAt` as Unix seconds for the last
 thread update. The adapter retains this content-free field as canonical
 nullable activity metadata and requests state-database pages in descending
 `updated_at` order. Shared reads may refresh it without turns. It is not proof

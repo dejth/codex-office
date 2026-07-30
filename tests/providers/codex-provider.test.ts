@@ -8,7 +8,7 @@ import {
 } from "../../src/providers/codex/transport";
 
 const INITIALIZE = {
-  userAgent: "Codex Desktop/0.145.0 synthetic",
+  userAgent: "Codex Desktop/0.146.0 synthetic",
   codexHome: "/private/never-retain",
 };
 const NOW = new Date("2026-07-23T04:00:00.000Z");
