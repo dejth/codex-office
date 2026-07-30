@@ -40,6 +40,7 @@ describe("negotiateCodexCapabilities", () => {
     expect(result).toEqual({
       status: "partial",
       version: "0.146.0",
+      verification: "schema-verified",
       mode: "snapshot-polling",
       experimentalApi: false,
       capabilities: {
@@ -59,6 +60,7 @@ describe("negotiateCodexCapabilities", () => {
 
     expect(result.status).toBe("partial");
     expect(result.version).toBe("0.146.0");
+    expect(result.verification).toBe("schema-verified");
     expect(result.capabilities.hierarchyPolling).toBe(true);
   });
 
@@ -66,23 +68,48 @@ describe("negotiateCodexCapabilities", () => {
     "Codex Desktop/0.138.0 (previously supported)",
     "Codex Desktop/0.145.0 (previously supported)",
     "Codex Desktop/0.146.1 (test)",
+    "Codex Desktop/0.146.0-alpha.3.1 (desktop bundle)",
+    "Codex Desktop/0.147.0-beta.1+local.2",
+    "codex-office/0.146.1",
+  ])("runtime-probes a valid unverified fingerprint", (userAgent) => {
+    const strict = negotiateCodexCapabilities({ userAgent });
+    const probed = negotiateCodexCapabilities({ userAgent }, undefined, {
+      allowUnverifiedRuntime: true,
+    });
+
+    expect(strict.status).toBe("degraded");
+    expect(strict.verification).toBe("unavailable");
+    expect(probed.status).toBe("partial");
+    expect(probed.verification).toBe("runtime-probed");
+    expect(probed.capabilities.hierarchyPolling).toBe(true);
+    expect(probed.diagnostics).toContainEqual({
+      code: "unsupported-runtime-version",
+    });
+    expect(JSON.stringify(probed)).not.toContain(userAgent);
+  });
+
+  it.each([
     "codex-cli/0.146.0",
     "Spoof Codex Desktop/0.146.0",
     "Codex Desktop/0.146.0 Codex Desktop/0.146.0",
     "codex-office/0.146.0 codex-office/0.146.0",
     "codex-office/0.146.0 Codex Desktop/0.146.0",
-    "codex-office/0.146.1",
     "codex-office/0.146.0\nmalformed",
     "codex-office/0.146.0\rmalformed",
     "codex-office/0.146.0\0malformed",
     "Codex Desktop/00.146.0",
+    "Codex Desktop/0.146.0-alpha.03",
+    `Codex Desktop/0.146.0-${"a".repeat(65)}`,
     "not-a-fingerprint",
   ])(
-    "degrades unsupported, malformed, or ambiguous fingerprint",
+    "degrades malformed or ambiguous fingerprint even when probing",
     (userAgent) => {
-      const result = negotiateCodexCapabilities({ userAgent });
+      const result = negotiateCodexCapabilities({ userAgent }, undefined, {
+        allowUnverifiedRuntime: true,
+      });
       expect(result.status).toBe("degraded");
       expect(result.version).toBeNull();
+      expect(result.verification).toBe("unavailable");
       expect(result.capabilities.hierarchyPolling).toBe(false);
       expect(JSON.stringify(result)).not.toContain(userAgent);
     },
@@ -94,6 +121,7 @@ describe("negotiateCodexCapabilities", () => {
       schema({ pinnedVersion: "0.145.1" }),
     );
     expect(result.status).toBe("degraded");
+    expect(result.verification).toBe("unavailable");
     expect(result.diagnostics).toContainEqual({
       code: "schema-version-mismatch",
     });

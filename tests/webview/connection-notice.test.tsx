@@ -26,7 +26,7 @@ describe("Connection notice", () => {
       "provider-transport-unavailable",
       "provider stopped responding",
     ],
-    ["degraded", "unsupported-version", "currently supports 0.146.0"],
+    ["degraded", "unsupported-version", "live status currently requires"],
     ["degraded", "invalid-provider-data", "invalid provider data"],
   ] as const)(
     "renders a non-color status cue for %s",
