@@ -23,6 +23,10 @@ export interface BundledSchemaEvidence {
   notificationMethods: readonly string[];
 }
 
+export interface CapabilityNegotiationOptions {
+  allowUnverifiedRuntime?: boolean;
+}
+
 export const DEFAULT_BUNDLED_SCHEMA_EVIDENCE: BundledSchemaEvidence =
   Object.freeze({
     pinnedVersion: "0.146.0",
@@ -44,7 +48,8 @@ export type CapabilityDiagnostic =
 
 export interface CodexCapabilityResult {
   status: "partial" | "degraded";
-  version: "0.146.0" | null;
+  version: string | null;
+  verification: "schema-verified" | "runtime-probed" | "unavailable";
   mode: "snapshot-polling";
   experimentalApi: false;
   capabilities: {
@@ -70,6 +75,7 @@ const bundledSchema = z.object({
 export function negotiateCodexCapabilities(
   untrustedInitialize: unknown,
   schemaEvidence: BundledSchemaEvidence = DEFAULT_BUNDLED_SCHEMA_EVIDENCE,
+  options: CapabilityNegotiationOptions = {},
 ): CodexCapabilityResult {
   const initialize = initializeSchema.safeParse(untrustedInitialize);
   const schema = bundledSchema.safeParse(schemaEvidence);
@@ -78,14 +84,20 @@ export function negotiateCodexCapabilities(
   if (!initialize.success) diagnostics.push({ code: "invalid-initialize" });
   if (!schema.success) diagnostics.push({ code: "invalid-schema-evidence" });
   if (!initialize.success || !schema.success) {
-    return makeResult(null, false, diagnostics);
+    return makeResult(null, false, false, diagnostics);
   }
 
   const runtimeVersion = parseRuntimeVersion(initialize.data.userAgent);
-  if (runtimeVersion !== "0.146.0") {
+  const schemaVerifiedRuntime = runtimeVersion === "0.146.0";
+  if (!schemaVerifiedRuntime) {
     diagnostics.push({ code: "unsupported-runtime-version" });
   }
-  if (runtimeVersion !== null && runtimeVersion !== schema.data.pinnedVersion) {
+  const schemaVersionMatches =
+    schema.data.pinnedVersion === DEFAULT_BUNDLED_SCHEMA_EVIDENCE.pinnedVersion;
+  if (
+    !schemaVersionMatches ||
+    (runtimeVersion !== null && runtimeVersion !== schema.data.pinnedVersion)
+  ) {
     diagnostics.push({ code: "schema-version-mismatch" });
   }
 
@@ -101,11 +113,20 @@ export function negotiateCodexCapabilities(
     }
   }
 
-  const hierarchyPolling = diagnostics.length === 0;
+  const hasMissingContractEvidence = diagnostics.some(
+    ({ code }) =>
+      code === "missing-request" || code === "missing-schema-notification",
+  );
+  const runtimeAllowed =
+    schemaVerifiedRuntime ||
+    (runtimeVersion !== null && options.allowUnverifiedRuntime === true);
+  const hierarchyPolling =
+    runtimeAllowed && schemaVersionMatches && !hasMissingContractEvidence;
   diagnostics.push({ code: "usage-source-unavailable" });
   return makeResult(
-    runtimeVersion === "0.146.0" ? runtimeVersion : null,
+    runtimeVersion,
     hierarchyPolling,
+    schemaVerifiedRuntime,
     diagnostics,
   );
 }
@@ -123,21 +144,28 @@ function parseRuntimeVersion(userAgent: string): string | null {
     return null;
   }
   const match =
-    /^(?:Codex Desktop|codex-office)\/((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?: [\x20-\x7E]*)?$/u.exec(
+    /^(?:Codex Desktop|codex-office)\/((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)(?: [\x20-\x7E]*)?$/u.exec(
       userAgent,
     );
   if (match === null) return null;
-  return match[1] ?? null;
+  const version = match[1];
+  return version !== undefined && version.length <= 64 ? version : null;
 }
 
 function makeResult(
-  version: "0.146.0" | null,
+  version: string | null,
   hierarchyPolling: boolean,
+  schemaVerifiedRuntime: boolean,
   diagnostics: CapabilityDiagnostic[],
 ): CodexCapabilityResult {
   return {
     status: hierarchyPolling ? "partial" : "degraded",
     version,
+    verification: hierarchyPolling
+      ? schemaVerifiedRuntime
+        ? "schema-verified"
+        : "runtime-probed"
+      : "unavailable",
     mode: "snapshot-polling",
     experimentalApi: false,
     capabilities: {
