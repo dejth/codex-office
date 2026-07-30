@@ -328,6 +328,42 @@ describe("CodexProvider", () => {
     expect(provider.diagnostic()).toBe("none");
   });
 
+  it("keeps unverified runtimes on persisted inventory instead of shared status", async () => {
+    const shared = new FakeTransport().queue("initialize", {
+      userAgent: "Codex Desktop/0.147.0 synthetic",
+    });
+    const fallback = new FakeTransport()
+      .queue("initialize", {
+        userAgent: "Codex Desktop/0.147.0 synthetic",
+      })
+      .queue("thread/list", {
+        data: [thread("thread-root", null, { type: "notLoaded" })],
+        nextCursor: null,
+      });
+    const provider = new CodexProvider(
+      () => shared,
+      () => NOW,
+      "/synthetic/workspace",
+      false,
+      true,
+      () => fallback,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(shared.stopped).toBeGreaterThan(0);
+    expect(
+      shared.calls.some(({ method }) => method === "thread/loaded/list"),
+    ).toBe(false);
+    expect(snapshot).toMatchObject({
+      connection: "connected",
+      statusSource: "persisted-inventory",
+      agents: [{ id: "thread-root", status: "unknown" }],
+    });
+    expect(provider.diagnostic()).toBe("none");
+  });
+
   it("recovers the shared observer on refresh after the retry cooldown", async () => {
     let now = NOW;
     const unavailableShared = new FakeTransport();
@@ -749,10 +785,15 @@ describe("CodexProvider", () => {
     unsubscribe();
   });
 
-  it("degrades unsupported versions without reading threads", async () => {
-    const transport = new FakeTransport().queue("initialize", {
-      userAgent: "Codex Desktop/0.139.0 synthetic",
-    });
+  it("runtime-probes unverified versions through strict persisted inventory", async () => {
+    const transport = new FakeTransport()
+      .queue("initialize", {
+        userAgent: "Codex Desktop/0.147.0 synthetic",
+      })
+      .queue("thread/list", {
+        data: [thread("compatible-root", null, { type: "notLoaded" })],
+        nextCursor: null,
+      });
     const provider = new CodexProvider(
       () => transport,
       () => NOW,
@@ -760,7 +801,63 @@ describe("CodexProvider", () => {
     await provider.connect();
     const snapshot = await provider.snapshot();
 
-    expect(snapshot.connection).toBe("degraded");
+    expect(snapshot).toMatchObject({
+      connection: "connected",
+      statusSource: "persisted-inventory",
+      agents: [{ id: "compatible-root", status: "unknown" }],
+    });
+    expect(provider.diagnostic()).toBe("none");
+    expect(
+      transport.calls.some(({ method }) => method.startsWith("thread/")),
+    ).toBe(true);
+  });
+
+  it("publishes nothing when an unverified runtime fails the inventory schema", async () => {
+    const transport = new FakeTransport()
+      .queue("initialize", {
+        userAgent: "Codex Desktop/0.147.0-beta.1 synthetic",
+      })
+      .queue("thread/list", {
+        data: [
+          {
+            ...thread("unsafe-root", null),
+            status: { type: "future-status" },
+            prompt: "must not escape",
+          },
+        ],
+        nextCursor: null,
+      });
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+    const snapshot = await provider.snapshot();
+
+    expect(snapshot).toMatchObject({
+      connection: "degraded",
+      agents: [],
+      statusSource: null,
+    });
+    expect(provider.diagnostic()).toBe("invalid-provider-data");
+    expect(JSON.stringify(snapshot)).not.toMatch(
+      /unsafe-root|future-status|prompt/,
+    );
+  });
+
+  it("fails closed on malformed runtime fingerprints without reading threads", async () => {
+    const transport = new FakeTransport().queue("initialize", {
+      userAgent: "codex-cli/0.146.0",
+    });
+    const provider = new CodexProvider(
+      () => transport,
+      () => NOW,
+    );
+
+    await provider.connect();
+
+    expect((await provider.snapshot()).connection).toBe("degraded");
     expect(provider.diagnostic()).toBe("unsupported-version");
     expect(transport.stopped).toBe(1);
     expect(

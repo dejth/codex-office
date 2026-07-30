@@ -78,9 +78,11 @@ filter-specific empty state and exposes no hidden cards to keyboard focus.
   respectively, alongside non-color text. The character is decorative; the
   heading and detail carry the meaning.
 - Connection notices preserve only the protocol's bounded reason enum. Missing
-  executable, unavailable transport, unsupported version, and invalid data each
-  receive specific recovery-oriented copy without exposing commands, paths,
-  payloads, or session content.
+  executable, unavailable transport, unverifiable runtime, and invalid data
+  each receive specific recovery-oriented copy without exposing commands,
+  paths, payloads, or session content. Compatibility copy distinguishes
+  persisted inventory from version-verified Shared observer status and never
+  implies that the whole extension requires one exact Codex version.
 - Empty-state artwork uses the same local five-frame production motion and
   reduced-motion gates as agent cards. It introduces no network requests.
 
